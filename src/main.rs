@@ -12,6 +12,8 @@ mod menus;
 mod screens;
 mod theme;
 
+pub mod skill;
+
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
 fn main() -> AppExit {
@@ -46,6 +48,7 @@ impl Plugin for AppPlugin {
         // Add other plugins.
         app.add_plugins((
             asset_tracking::plugin,
+            skill::plugin,
             audio::plugin,
             demo::plugin,
             #[cfg(feature = "dev")]
