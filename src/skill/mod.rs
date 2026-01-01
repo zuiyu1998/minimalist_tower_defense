@@ -15,10 +15,10 @@ pub struct SkillRunContext {
     pub source: Option<Entity>,
     pub caster: Entity,
     pub target: Entity,
-    pub payload: HashMap<String, Box<dyn SkillData>>,
+    pub payload: HashMap<String, Box<dyn SkillRunData>>,
 }
 
-pub trait SkillData: 'static + Sync + Send + Debug {}
+pub trait SkillRunData: 'static + Sync + Send + Debug {}
 
 pub struct Skill {}
 
@@ -42,11 +42,30 @@ impl SkillEffctProcessor for MySystemParam {
     type Effect = MySkillEffect;
 }
 
-pub struct SkillResponse {}
+pub trait SkillCommand: 'static + Send + Sync + Debug {
+    fn execute(&self) {}
+}
+
+#[derive(Debug, Component)]
+pub struct SkillResponse {
+    commands: Vec<Box<dyn SkillCommand>>,
+}
 
 impl SkillResponse {
     pub fn empty() -> SkillResponse {
-        SkillResponse {}
+        SkillResponse {
+            commands: Default::default(),
+        }
+    }
+
+    pub fn execute(&self) {
+        for command in self.commands.iter() {
+            command.execute();
+        }
+    }
+
+    pub fn merge(&mut self, mut other: SkillResponse) {
+        self.commands.append(&mut other.commands);
     }
 }
 
@@ -62,15 +81,26 @@ pub trait SkillEffctProcessor {
     }
 }
 
+#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
+pub enum SkillSystems {
+    Update,
+    Execute,
+}
+
 pub fn process_skill_effct<T: SystemParam + SkillEffctProcessor>(
     processor: T,
-    mut skill_effct_q: Query<(&T::Effect, &mut SkillRunContext)>,
+    mut skill_effct_q: Query<(&T::Effect, &mut SkillRunContext, &mut SkillResponse)>,
 ) {
-    for (skill_effct, mut context) in skill_effct_q.iter_mut() {
-        processor.process(skill_effct, &mut context);
+    for (skill_effct, mut context, mut res) in skill_effct_q.iter_mut() {
+        res.merge(processor.process(skill_effct, &mut context));
     }
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Last, process_skill_effct::<MySystemParam>);
+    app.configure_sets(Last, (SkillSystems::Update, SkillSystems::Execute).chain());
+
+    app.add_systems(
+        Last,
+        process_skill_effct::<MySystemParam>.in_set(SkillSystems::Update),
+    );
 }
