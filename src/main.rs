@@ -8,8 +8,10 @@ mod audio;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod menus;
+mod player;
 mod screens;
 mod theme;
+mod level;
 
 pub mod skill;
 
@@ -48,6 +50,8 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             asset_tracking::plugin,
             skill::plugin,
+            player::plugin,
+            level::plugin,
             audio::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
