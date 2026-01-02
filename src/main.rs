@@ -13,6 +13,7 @@ mod screens;
 mod theme;
 mod level;
 mod enemy;
+mod unit;
 
 pub mod skill;
 
@@ -53,6 +54,7 @@ impl Plugin for AppPlugin {
             skill::plugin,
             player::plugin,
             enemy::plugin,
+            unit::plugin,
             level::plugin,
             audio::plugin,
             #[cfg(feature = "dev")]
