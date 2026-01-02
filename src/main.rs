@@ -12,6 +12,7 @@ mod player;
 mod screens;
 mod theme;
 mod level;
+mod enemy;
 
 pub mod skill;
 
@@ -51,6 +52,7 @@ impl Plugin for AppPlugin {
             asset_tracking::plugin,
             skill::plugin,
             player::plugin,
+            enemy::plugin,
             level::plugin,
             audio::plugin,
             #[cfg(feature = "dev")]
