@@ -3,9 +3,9 @@ use bevy::prelude::*;
 
 use crate::{
     battle,
-    common::AttackDistance,
+    common::{AttackDistance, GameLayer},
     enemy::Enemy,
-    skill::Skill,
+    skill::{Skill, SkillRunContextData},
     unit::{CooldownTimer, EnemyTargets},
 };
 
@@ -31,12 +31,24 @@ fn check_enemy_targets(
 }
 
 //更新
-fn update(
+fn on_cooldown_timer_update(
     mut commands: Commands,
-    mut cooldown_timer_q: Query<(&mut CooldownTimer, &Skill, Entity, &EnemyTargets)>,
+    mut cooldown_timer_q: Query<
+        (
+            &mut CooldownTimer,
+            &Skill,
+            Entity,
+            &EnemyTargets,
+            &GlobalTransform,
+        ),
+        With<ArrowTower>,
+    >,
+    enemy_q: Query<&GlobalTransform, With<Enemy>>,
     time: Res<Time>,
 ) {
-    for (mut cooldown_timer, skill, entity, enemy_targets) in cooldown_timer_q.iter_mut() {
+    for (mut cooldown_timer, skill, entity, enemy_targets, unit_position) in
+        cooldown_timer_q.iter_mut()
+    {
         cooldown_timer.0.tick(time.delta());
 
         if cooldown_timer.0.just_finished() {
@@ -44,11 +56,18 @@ fn update(
                 return;
             }
 
-            println!("ddddd");
-
             let target = *enemy_targets.0.first().unwrap();
+            let target_position = enemy_q.get(target).unwrap();
 
-            battle::execute_skill(&mut commands, skill, entity, vec![target], None);
+            let direction = target_position.translation() - unit_position.translation();
+            let direction = direction.truncate().normalize();
+
+            let mut data = SkillRunContextData::default();
+            data.set_data("layers", GameLayer::unit_hitbox_layers());
+            data.set_data("direction", direction);
+
+            tracing::debug!("Skill start.");
+            battle::execute_skill(&mut commands, skill, entity, vec![target], None, data);
         }
     }
 }
@@ -73,5 +92,5 @@ fn find_enemy(
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (check_enemy_targets, find_enemy).chain());
-    app.add_systems(FixedUpdate, (update,).chain());
+    app.add_systems(FixedUpdate, (on_cooldown_timer_update,).chain());
 }

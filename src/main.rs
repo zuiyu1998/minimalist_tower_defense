@@ -5,6 +5,8 @@
 
 mod asset_tracking;
 mod audio;
+mod battle;
+mod common;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod enemy;
@@ -14,14 +16,12 @@ mod player;
 mod screens;
 mod theme;
 mod unit;
-mod common;
-mod battle;
-
+mod bullet;
 
 pub mod skill;
 
 use avian2d::prelude::*;
-use bevy::{asset::AssetMetaCheck, prelude::*};
+use bevy::{asset::AssetMetaCheck, log::LogPlugin, prelude::*};
 
 fn main() -> AppExit {
     App::new().add_plugins(AppPlugin).run()
@@ -49,6 +49,10 @@ impl Plugin for AppPlugin {
                     }
                     .into(),
                     ..default()
+                })
+                .set(LogPlugin {
+                    filter: "info,minimalist_tower_defense=debug".to_string(),
+                    ..default()
                 }),
         );
 
@@ -56,6 +60,7 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             asset_tracking::plugin,
             skill::plugin,
+            bullet::plugin,
             battle::plugin,
             player::plugin,
             enemy::plugin,

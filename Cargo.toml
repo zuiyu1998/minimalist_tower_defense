@@ -16,6 +16,7 @@ tracing = { version = "0.1", features = [
 ] }
 
 avian2d = "0.4"
+downcast-rs = { version = "2" }
 
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }

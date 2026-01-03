@@ -18,7 +18,7 @@ pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
         RigidBody::Dynamic,
         Collider::rectangle(80.0, 80.0),
         LinearVelocity(Vec2::new(-10.0, 10.0)),
-        GameLayer::enemy_layer(),
+        GameLayer::enemy_layers(),
         Transform {
             translation: position,
             ..default()

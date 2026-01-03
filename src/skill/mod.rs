@@ -1,13 +1,11 @@
 mod attribute;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::Deref};
 
 pub use attribute::*;
 
-use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
-
-#[derive(Debug, SystemParam)]
-pub struct SkillSystemParam {}
+use bevy::{platform::collections::HashMap, prelude::*};
+use downcast_rs::{Downcast, impl_downcast};
 
 ///技能运行过程数据
 #[derive(Debug, Component)]
@@ -15,10 +13,53 @@ pub struct SkillRunContext {
     pub source: Option<Entity>,
     pub caster: Entity,
     pub target: Entity,
-    pub payload: HashMap<String, Box<dyn SkillRunData>>,
+    pub data: SkillRunContextData,
 }
 
-pub trait SkillRunData: 'static + Sync + Send + Debug {}
+#[derive(Debug, Default)]
+pub struct SkillRunContextData(HashMap<String, Box<dyn SkillRunData>>);
+
+impl SkillRunContextData {
+    pub fn set_data<T: SkillRunData>(&mut self, name: &str, value: T) {
+        self.0.insert(name.to_string(), Box::new(value));
+    }
+}
+
+impl Clone for SkillRunContextData {
+    fn clone(&self) -> Self {
+        let mut map = HashMap::default();
+
+        for (key, value) in self.0.iter() {
+            map.insert(key.clone(), value.clone());
+        }
+
+        SkillRunContextData(map)
+    }
+}
+
+impl SkillRunContext {
+    pub fn get_data<T: SkillRunData>(&self, name: &str) -> Option<&T> {
+        self.data.0.get(name).and_then(|data| data.downcast_ref())
+    }
+}
+
+pub trait SkillRunData: 'static + Sync + Send + Debug + Downcast {
+    fn clone_boxed(&self) -> Box<dyn SkillRunData>;
+}
+
+impl_downcast!(SkillRunData);
+
+impl Clone for Box<dyn SkillRunData> {
+    fn clone(&self) -> Self {
+        self.deref().clone_boxed()
+    }
+}
+
+impl<T: Clone + 'static + Sync + Send + Debug> SkillRunData for T {
+    fn clone_boxed(&self) -> Box<dyn SkillRunData> {
+        Box::new(self.clone())
+    }
+}
 
 #[derive(Debug, Component)]
 pub struct Skill {}
@@ -48,22 +89,17 @@ impl SkillResponse {
             command.execute();
         }
     }
-
-    pub fn merge(&mut self, mut other: SkillResponse) {
-        self.commands.append(&mut other.commands);
-    }
 }
 
 pub trait SkillEffctProcessor {
     type Effect: FromSkill + Component;
 
     fn process(
-        &self,
+        &mut self,
         _skill_effct: &Self::Effect,
         _context: &mut SkillRunContext,
-    ) -> SkillResponse {
-        SkillResponse::empty()
-    }
+        response: &mut SkillResponse,
+    );
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -73,12 +109,12 @@ pub enum SkillSystems {
     Free,
 }
 
-pub fn process_skill_effct<T: SystemParam + SkillEffctProcessor>(
-    processor: T,
+pub fn process_skill_effct<T: SkillEffctProcessor>(
+    processor: &mut T,
     mut skill_effct_q: Query<(&T::Effect, &mut SkillRunContext, &mut SkillResponse)>,
 ) {
     for (skill_effct, mut context, mut res) in skill_effct_q.iter_mut() {
-        res.merge(processor.process(skill_effct, &mut context));
+        processor.process(skill_effct, &mut context, &mut res);
     }
 }
 

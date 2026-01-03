@@ -1,9 +1,16 @@
+use avian2d::prelude::CollisionLayers;
 use bevy::{ecs::system::SystemParam, prelude::*};
 
-use crate::skill::{FromSkill, Skill, SkillEffctProcessor, SkillResponse, SkillRunContext};
+use crate::{
+    bullet::spawn_bullet,
+    skill::{FromSkill, Skill, SkillEffctProcessor, SkillResponse, SkillRunContext},
+};
 
-#[derive(Debug, SystemParam)]
-pub struct BulletSystemParam {}
+#[derive(SystemParam)]
+pub struct BulletSystemParam<'w, 's> {
+    pub commands: Commands<'w, 's>,
+    pub asset_server: Res<'w, AssetServer>,
+}
 
 #[derive(Debug, Component)]
 pub struct BulletSkillEffect {}
@@ -14,16 +21,35 @@ impl FromSkill for BulletSkillEffect {
     }
 }
 
-impl SkillEffctProcessor for BulletSystemParam {
+impl<'w, 's> SkillEffctProcessor for BulletSystemParam<'w, 's> {
     type Effect = BulletSkillEffect;
 
     fn process(
-        &self,
+        &mut self,
         _skill_effct: &Self::Effect,
-        _context: &mut SkillRunContext,
-    ) -> SkillResponse {
-        println!("bullet skill effect process");
+        context: &mut SkillRunContext,
+        _response: &mut SkillResponse,
+    ) {
+        tracing::debug!("Bullet skill effect process start.");
 
-        SkillResponse::empty()
+        // let Some(bullet_position) = context.get_data::<Vec2>("bullet_position") else {
+        //     tracing::error!("Bullet position not found.");
+
+        //     return;
+        // };
+
+        let Some(direction) = context.get_data::<Vec2>("direction") else {
+            tracing::error!("Direction not found.");
+
+            return;
+        };
+
+        let Some(layers) = context.get_data::<CollisionLayers>("layers") else {
+            tracing::error!("Bullet position not found.");
+
+            return;
+        };
+
+        spawn_bullet(&mut self.commands, &self.asset_server, *layers, *direction);
     }
 }
