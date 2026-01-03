@@ -20,26 +20,11 @@ pub struct SkillRunContext {
 
 pub trait SkillRunData: 'static + Sync + Send + Debug {}
 
+#[derive(Debug, Component)]
 pub struct Skill {}
 
 pub trait FromSkill {
     fn from_skill(skill: &Skill) -> Self;
-}
-
-#[derive(Debug, SystemParam)]
-pub struct MySystemParam {}
-
-#[derive(Debug, Component)]
-pub struct MySkillEffect {}
-
-impl FromSkill for MySkillEffect {
-    fn from_skill(_skill: &Skill) -> Self {
-        MySkillEffect {}
-    }
-}
-
-impl SkillEffctProcessor for MySystemParam {
-    type Effect = MySkillEffect;
 }
 
 pub trait SkillCommand: 'static + Send + Sync + Debug {
@@ -85,6 +70,7 @@ pub trait SkillEffctProcessor {
 pub enum SkillSystems {
     Update,
     Execute,
+    Free,
 }
 
 pub fn process_skill_effct<T: SystemParam + SkillEffctProcessor>(
@@ -96,11 +82,22 @@ pub fn process_skill_effct<T: SystemParam + SkillEffctProcessor>(
     }
 }
 
-pub(super) fn plugin(app: &mut App) {
-    app.configure_sets(Last, (SkillSystems::Update, SkillSystems::Execute).chain());
+fn free(mut commands: Commands, skill_effct_q: Query<Entity, With<SkillRunContext>>) {
+    for entity in skill_effct_q.iter() {
+        commands.entity(entity).despawn();
+    }
+}
 
-    app.add_systems(
+pub(super) fn plugin(app: &mut App) {
+    app.configure_sets(
         Last,
-        process_skill_effct::<MySystemParam>.in_set(SkillSystems::Update),
+        (
+            SkillSystems::Update,
+            SkillSystems::Execute,
+            SkillSystems::Free,
+        )
+            .chain(),
     );
+
+    app.add_systems(Last, free.in_set(SkillSystems::Free));
 }

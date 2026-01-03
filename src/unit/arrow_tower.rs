@@ -2,8 +2,10 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
+    battle,
     common::AttackDistance,
     enemy::Enemy,
+    skill::Skill,
     unit::{CooldownTimer, EnemyTargets},
 };
 
@@ -29,12 +31,24 @@ fn check_enemy_targets(
 }
 
 //更新
-fn update(mut cooldown_timer_q: Query<&mut CooldownTimer>, time: Res<Time>) {
-    for mut cooldown_timer in cooldown_timer_q.iter_mut() {
+fn update(
+    mut commands: Commands,
+    mut cooldown_timer_q: Query<(&mut CooldownTimer, &Skill, Entity, &EnemyTargets)>,
+    time: Res<Time>,
+) {
+    for (mut cooldown_timer, skill, entity, enemy_targets) in cooldown_timer_q.iter_mut() {
         cooldown_timer.0.tick(time.delta());
 
         if cooldown_timer.0.just_finished() {
-            println!("on attack")
+            if enemy_targets.0.is_empty() {
+                return;
+            }
+
+            println!("ddddd");
+
+            let target = *enemy_targets.0.first().unwrap();
+
+            battle::execute_skill(&mut commands, skill, entity, vec![target], None);
         }
     }
 }

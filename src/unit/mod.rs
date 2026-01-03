@@ -2,7 +2,7 @@ pub mod arrow_tower;
 
 use std::time::Duration;
 
-use crate::common::{GameLayer, spawn_attack_distance};
+use crate::{common::{GameLayer, spawn_attack_distance}, skill::Skill};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -32,6 +32,7 @@ pub fn spawn_unit(commands: &mut Commands, asset_server: &AssetServer) {
         ArrowTower,
         EnemyTargets::default(),
         CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
+        Skill {},
     ));
 
     let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();

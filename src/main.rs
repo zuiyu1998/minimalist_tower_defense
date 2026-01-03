@@ -15,6 +15,7 @@ mod screens;
 mod theme;
 mod unit;
 mod common;
+mod battle;
 
 
 pub mod skill;
@@ -55,6 +56,7 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             asset_tracking::plugin,
             skill::plugin,
+            battle::plugin,
             player::plugin,
             enemy::plugin,
             unit::plugin,
