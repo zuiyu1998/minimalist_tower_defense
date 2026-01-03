@@ -1,5 +1,6 @@
 //! Development tools for the game. This plugin is only enabled in dev builds.
 
+use avian2d::prelude::*;
 use bevy::{
     dev_tools::states::log_transitions, input::common_conditions::input_just_pressed, prelude::*,
 };
@@ -7,6 +8,8 @@ use bevy::{
 use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((PhysicsDebugPlugin,));
+
     // Log `Screen` state transitions.
     app.add_systems(Update, log_transitions::<Screen>);
 
