@@ -57,7 +57,9 @@ fn on_cooldown_timer_update(
             }
 
             let target = *enemy_targets.0.first().unwrap();
-            let target_position = enemy_q.get(target).unwrap();
+            let Ok(target_position) = enemy_q.get(target) else {
+                return;
+            };
 
             let direction =
                 target_position.translation().truncate() - unit_position.translation().truncate();

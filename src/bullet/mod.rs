@@ -7,6 +7,27 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, on_bullet_attack);
 }
 
+fn apply(
+    commands: &mut Commands,
+    stats_q: &mut Query<&mut Stas>,
+    bullet_q: &Query<(&Bullet, Entity)>,
+    bullet_entity: Entity,
+    stats_entity: Entity,
+) {
+    if let Ok((_bullet, entity)) = bullet_q.get(bullet_entity) {
+        tracing::info!("bullet attack start");
+
+        if let Ok(mut stats) = stats_q.get_mut(stats_entity) {
+            stats.update_health(-5);
+            if stats.is_die() {
+                commands.entity(stats_entity).despawn();
+            }
+        }
+
+        commands.entity(entity).despawn();
+    }
+}
+
 fn on_bullet_attack(
     mut commands: Commands,
     mut collision_reader: MessageReader<CollisionStart>,
@@ -20,18 +41,8 @@ fn on_bullet_attack(
         let body1 = event.body1.clone().unwrap();
         let body2 = event.body2.clone().unwrap();
 
-        if let Ok((_bullet, entity)) = bullet_q.get(body1) {
-            tracing::info!("bullet attack start");
-
-            if let Ok(mut stats) = stats_q.get_mut(body2) {
-                stats.update_health(-5);
-                if stats.is_die() {
-                    commands.entity(body2).despawn();
-                }
-            }
-
-            commands.entity(entity).despawn();
-        }
+        apply(&mut commands, &mut stats_q, &bullet_q, body1, body2);
+        apply(&mut commands, &mut stats_q, &bullet_q, body2, body1);
     }
 }
 

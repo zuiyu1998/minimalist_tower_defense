@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
     let image = asset_server.load("images/enemy/square.png");
 
-    let position = Vec3::new(200.0, 0.0, 0.0);
+    let position = Vec3::new(-200.0, 0.0, 0.0);
 
     let collider = Collider::rectangle(80.0, 80.0);
 
@@ -26,6 +26,7 @@ pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
             ..default()
         },
         Stas::default(),
+        Name::new("Square")
     ));
 
     spawn_hurt(&mut commands, collider, GameLayer::enemy_hurtbox_layers());

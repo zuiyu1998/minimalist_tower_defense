@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.17" }
+bevy = { version = "0.17.3" }
 rand = "0.9"
 # Compile out low-severity logs to improve performance.
 # Remove these features if you want to profile your game with tracy.
@@ -17,6 +17,7 @@ tracing = { version = "0.1", features = [
 
 avian2d = "0.4"
 downcast-rs = { version = "2" }
+bevy-inspector-egui = { version = "0.35.0", optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
@@ -31,6 +32,7 @@ dev = [
     "bevy/bevy_ui_debug",
     # Improve error messages coming from Bevy
     "bevy/track_location",
+    "bevy-inspector-egui"
 ]
 dev_native = [
     "dev",
