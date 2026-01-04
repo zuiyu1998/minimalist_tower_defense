@@ -12,6 +12,7 @@ mod common;
 mod dev_tools;
 mod enemy;
 mod level;
+mod map;
 mod menus;
 mod player;
 mod screens;
@@ -55,6 +56,7 @@ impl Plugin for AppPlugin {
         // Add other plugins.
         app.add_plugins((
             asset_tracking::plugin,
+            map::plugin,
             skill::plugin,
             bullet::plugin,
             battle::plugin,
