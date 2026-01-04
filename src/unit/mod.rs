@@ -11,7 +11,7 @@ use arrow_tower::ArrowTower;
 pub fn spawn_unit(commands: &mut Commands, asset_server: &AssetServer) {
     let image = asset_server.load("images/unit/TemporaryArrowTower.png");
 
-    let position = Vec3::new(-100.0, 100.0, 0.0);
+    let position = Vec3::new(0.0, 0.0, 0.0);
 
     let unit_layers = GameLayer::unit_layers();
 

@@ -2,10 +2,10 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    battle,
+    battle::{self, BulletContext},
     common::{AttackDistance, GameLayer},
     enemy::Enemy,
-    skill::{Skill, SkillRunContextData},
+    skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
     unit::{CooldownTimer, EnemyTargets},
 };
 
@@ -59,12 +59,22 @@ fn on_cooldown_timer_update(
             let target = *enemy_targets.0.first().unwrap();
             let target_position = enemy_q.get(target).unwrap();
 
-            let direction = target_position.translation() - unit_position.translation();
-            let direction = direction.truncate().normalize();
+            tracing::debug!("target_position {}", target_position.translation());
+            tracing::debug!("unit_position {}", unit_position.translation());
+
+            let direction =
+                target_position.translation().truncate() - unit_position.translation().truncate();
+            let direction = direction.normalize();
+
+            let context = BulletContext {
+                layers: GameLayer::unit_hitbox_layers(),
+                direction: direction,
+                bullet_position: unit_position.translation().truncate(),
+            };
 
             let mut data = SkillRunContextData::default();
-            data.set_data("layers", GameLayer::unit_hitbox_layers());
-            data.set_data("direction", direction);
+
+            context.update_skill_run_context_data(&mut data);
 
             tracing::debug!("Skill start.");
             battle::execute_skill(&mut commands, skill, entity, vec![target], None, data);

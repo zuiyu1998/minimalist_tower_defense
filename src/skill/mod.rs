@@ -20,8 +20,12 @@ pub struct SkillRunContext {
 pub struct SkillRunContextData(HashMap<String, Box<dyn SkillRunData>>);
 
 impl SkillRunContextData {
-    pub fn set_data<T: SkillRunData>(&mut self, name: &str, value: T) {
+    pub fn set_value<T: SkillRunData>(&mut self, name: &str, value: T) {
         self.0.insert(name.to_string(), Box::new(value));
+    }
+
+    pub fn get_value<T: SkillRunData>(&self, name: &str) -> Option<&T> {
+        self.0.get(name).and_then(|data| data.downcast_ref())
     }
 }
 
@@ -91,15 +95,41 @@ impl SkillResponse {
     }
 }
 
+pub trait SkillRunContextDataBuilder: 'static + Sized {
+    fn unique_name() -> &'static str;
+
+    fn from_skill_run_context_data(context: &SkillRunContextData) -> Option<Self>;
+
+    fn update_skill_run_context_data(&self, _data: &mut SkillRunContextData);
+
+    fn get_property_name(name: &str) -> String {
+        format!("{}_{}", Self::unique_name(), name)
+    }
+}
+
+impl SkillRunContextDataBuilder for () {
+    fn unique_name() -> &'static str {
+        ""
+    }
+
+    fn from_skill_run_context_data(_data: &SkillRunContextData) -> Option<Self> {
+        None
+    }
+
+    fn update_skill_run_context_data(&self, _data: &mut SkillRunContextData) {}
+}
+
 pub trait SkillEffctProcessor {
     type Effect: FromSkill + Component;
+    type Context: SkillRunContextDataBuilder;
+    type Response: SkillRunContextDataBuilder;
 
     fn process(
         &mut self,
-        _skill_effct: &Self::Effect,
-        _context: &mut SkillRunContext,
+        skill_effct: &Self::Effect,
+        context: &Self::Context,
         response: &mut SkillResponse,
-    );
+    ) -> Self::Response;
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -113,8 +143,15 @@ pub fn process_skill_effct<T: SkillEffctProcessor>(
     processor: &mut T,
     mut skill_effct_q: Query<(&T::Effect, &mut SkillRunContext, &mut SkillResponse)>,
 ) {
-    for (skill_effct, mut context, mut res) in skill_effct_q.iter_mut() {
-        processor.process(skill_effct, &mut context, &mut res);
+    for (skill_effct, mut run_context, mut response) in skill_effct_q.iter_mut() {
+        tracing::debug!("Skill effect process start.");
+        let Some(context) = T::Context::from_skill_run_context_data(&run_context.data) else {
+            continue;
+        };
+
+        let res = processor.process(skill_effct, &context, &mut response);
+
+        res.update_skill_run_context_data(&mut run_context.data);
     }
 }
 

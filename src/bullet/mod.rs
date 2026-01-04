@@ -21,7 +21,9 @@ pub fn spawn_bullet(
     asset_server: &AssetServer,
     layers: CollisionLayers,
     direction: Vec2,
+    bullet_position: Vec2,
 ) {
+    tracing::info!("bullet direction: {}", direction);
     let image = asset_server.load("images/bullet/ball.png");
 
     let collider = Collider::circle(3.0);
@@ -29,10 +31,14 @@ pub fn spawn_bullet(
     let mut commands = commands.spawn((
         Bullet,
         Sprite { image, ..default() },
-        RigidBody::Dynamic,
+        RigidBody::Kinematic,
         collider.clone(),
         GameLayer::default_layers(),
-        LinearVelocity(direction * 10.0),
+        LinearVelocity(direction * 40.0 * 1.0),
+        Transform {
+            translation: Vec3::new(bullet_position.x, bullet_position.y, 0.0),
+            ..default()
+        },
     ));
 
     spawn_hit(&mut commands, collider, layers);
