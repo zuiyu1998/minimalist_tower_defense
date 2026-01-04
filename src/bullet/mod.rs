@@ -1,7 +1,7 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::common::{GameLayer, spawn_hit};
+use crate::common::{GameLayer, Stas, spawn_hit};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, on_bullet_attack);
@@ -11,15 +11,24 @@ fn on_bullet_attack(
     mut commands: Commands,
     mut collision_reader: MessageReader<CollisionStart>,
     bullet_q: Query<(&Bullet, Entity)>,
+    mut stats_q: Query<&mut Stas>,
 ) {
     for event in collision_reader.read() {
-        if event.body1.is_none() {
+        if event.body1.is_none() || event.body2.is_none() {
             continue;
         }
         let body1 = event.body1.clone().unwrap();
+        let body2 = event.body2.clone().unwrap();
 
         if let Ok((_bullet, entity)) = bullet_q.get(body1) {
             tracing::info!("bullet attack start");
+
+            if let Ok(mut stats) = stats_q.get_mut(body2) {
+                stats.update_health(-5);
+                if stats.is_die() {
+                    commands.entity(body2).despawn();
+                }
+            }
 
             commands.entity(entity).despawn();
         }
