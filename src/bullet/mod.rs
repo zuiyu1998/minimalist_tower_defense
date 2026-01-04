@@ -7,9 +7,22 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, on_bullet_attack);
 }
 
-fn on_bullet_attack(mut collision_reader: MessageReader<CollisionStart>) {
+fn on_bullet_attack(
+    mut commands: Commands,
+    mut collision_reader: MessageReader<CollisionStart>,
+    bullet_q: Query<(&Bullet, Entity)>,
+) {
     for event in collision_reader.read() {
-        println!("event {} {}", event.collider1, event.collider2);
+        if event.body1.is_none() {
+            continue;
+        }
+        let body1 = event.body1.clone().unwrap();
+
+        if let Ok((_bullet, entity)) = bullet_q.get(body1) {
+            tracing::info!("bullet attack start");
+
+            commands.entity(entity).despawn();
+        }
     }
 }
 
@@ -23,7 +36,6 @@ pub fn spawn_bullet(
     direction: Vec2,
     bullet_position: Vec2,
 ) {
-    tracing::info!("bullet direction: {}", direction);
     let image = asset_server.load("images/bullet/ball.png");
 
     let collider = Collider::circle(3.0);
@@ -34,7 +46,7 @@ pub fn spawn_bullet(
         RigidBody::Kinematic,
         collider.clone(),
         GameLayer::default_layers(),
-        LinearVelocity(direction * 40.0 * 1.0),
+        LinearVelocity(direction * 100.0 * 1.0),
         Transform {
             translation: Vec3::new(bullet_position.x, bullet_position.y, 0.0),
             ..default()

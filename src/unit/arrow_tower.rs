@@ -59,9 +59,6 @@ fn on_cooldown_timer_update(
             let target = *enemy_targets.0.first().unwrap();
             let target_position = enemy_q.get(target).unwrap();
 
-            tracing::debug!("target_position {}", target_position.translation());
-            tracing::debug!("unit_position {}", unit_position.translation());
-
             let direction =
                 target_position.translation().truncate() - unit_position.translation().truncate();
             let direction = direction.normalize();

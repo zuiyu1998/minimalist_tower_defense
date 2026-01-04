@@ -45,4 +45,8 @@ impl GameLayer {
     pub fn unit_hitbox_layers() -> CollisionLayers {
         CollisionLayers::new(GameLayer::UnitHitbox, [GameLayer::EnemyHurtbox])
     }
+
+    pub fn enemy_hurtbox_layers() -> CollisionLayers {
+        CollisionLayers::new(GameLayer::EnemyHurtbox, [GameLayer::UnitHitbox])
+    }
 }
