@@ -1,8 +1,10 @@
 mod attack_distance;
 mod hit_hurt;
+mod stas;
 
 pub use attack_distance::*;
 pub use hit_hurt::*;
+pub use stas::*;
 
 use avian2d::prelude::*;
 

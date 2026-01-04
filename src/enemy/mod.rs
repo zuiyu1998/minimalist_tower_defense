@@ -1,4 +1,4 @@
-use crate::common::{GameLayer, spawn_hurt};
+use crate::common::{GameLayer, Stas, spawn_hurt};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -25,6 +25,7 @@ pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
             translation: position,
             ..default()
         },
+        Stas::default(),
     ));
 
     spawn_hurt(&mut commands, collider, GameLayer::enemy_hurtbox_layers());
