@@ -19,7 +19,7 @@ pub fn spawn_unit(commands: &mut Commands, asset_server: &AssetServer) {
         Unit,
         Sprite {
             image,
-            custom_size: Some(Vec2::splat(100.0)),
+            custom_size: Some(Vec2::splat(128.0)),
             ..default()
         },
         Transform {
