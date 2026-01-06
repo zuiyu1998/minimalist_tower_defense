@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use bevy::{platform::collections::HashMap, prelude::*};
 
-use crate::{map::spawn_hill_map_item, unit::spawn_unit};
+use crate::{enemy::spawn_enemy, map::spawn_hill_map_item, unit::spawn_unit};
 
 use super::MapItemData;
 
@@ -14,6 +14,7 @@ impl MapItemFactoryContainer {
         let mut container = MapItemFactoryContainer::empty();
         container.register(HillMapItemFactory);
         container.register(ArrowTowerMapItemFactory);
+        container.register(SquareMapItemFactory);
 
         container
     }
@@ -94,5 +95,25 @@ impl MapItemFactory for ArrowTowerMapItemFactory {
     ) {
         let position = Vec3::new(item_data.position.x, item_data.position.y, 0.0);
         spawn_unit(commands, asset_server, position, Name::new("ArrowTower"));
+    }
+}
+
+
+#[derive(Debug)]
+pub struct SquareMapItemFactory;
+
+impl MapItemFactory for SquareMapItemFactory {
+    fn map_item_name(&self) -> &'static str {
+        "square"
+    }
+
+    fn spawn_map_item(
+        &self,
+        commands: &mut EntityCommands,
+        asset_server: &AssetServer,
+        item_data: &MapItemData,
+    ) {
+        let position = Vec3::new(item_data.position.x, item_data.position.y, 0.0);
+        spawn_enemy(commands, asset_server, position, Name::new("Square"));
     }
 }

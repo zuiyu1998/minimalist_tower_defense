@@ -21,7 +21,11 @@ pub fn spawn_unit(
 
     let unit_layers = GameLayer::unit_layers();
 
-    let mut commands = commands.with_child((
+    let parent = commands.id();
+
+    let mut commands = commands.commands();
+
+    let mut entity_commands = commands.spawn((
         Unit,
         Sprite {
             image,
@@ -39,12 +43,16 @@ pub fn spawn_unit(
         EnemyTargets::default(),
         CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
         Skill {},
-        name
+        name,
     ));
+
+    let unit = entity_commands.id();
 
     let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
 
-    spawn_attack_distance(&mut commands, 500.0, unit_attack_distance_layers);
+    spawn_attack_distance(&mut entity_commands, 500.0, unit_attack_distance_layers);
+
+    commands.entity(parent).add_child(unit);
 }
 
 #[derive(Debug, Component, Default)]

@@ -2,14 +2,21 @@ use crate::common::{GameLayer, Stas, spawn_hurt};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
+pub fn spawn_enemy(
+    commands: &mut EntityCommands,
+    asset_server: &AssetServer,
+    position: Vec3,
+    name: Name,
+) {
     let image = asset_server.load("images/enemy/square.png");
-
-    let position = Vec3::new(-200.0, 0.0, 0.0);
 
     let collider = Collider::rectangle(80.0, 80.0);
 
-    let mut commands = commands.spawn((
+    let parent = commands.id();
+
+    let mut commands = commands.commands();
+
+    let mut entity_commands = commands.spawn((
         Enemy,
         Square,
         Sprite {
@@ -26,10 +33,18 @@ pub fn spawn_enemy(commands: &mut Commands, asset_server: &AssetServer) {
             ..default()
         },
         Stas::default(),
-        Name::new("Square")
+        name,
     ));
 
-    spawn_hurt(&mut commands, collider, GameLayer::enemy_hurtbox_layers());
+    let enemy = entity_commands.id();
+
+    spawn_hurt(
+        &mut entity_commands,
+        collider,
+        GameLayer::enemy_hurtbox_layers(),
+    );
+
+    commands.entity(parent).add_child(enemy);
 }
 
 #[derive(Debug, Component)]

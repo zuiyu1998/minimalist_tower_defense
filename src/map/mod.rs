@@ -47,6 +47,13 @@ impl Default for MapData {
             });
         }
 
+        items.push(MapItemData {
+            name: "square".to_string(),
+            x: 0,
+            y: 0,
+            position: Vec2::ZERO,
+        });
+
         MapData {
             items,
             item_size: 128,
