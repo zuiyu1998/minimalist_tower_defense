@@ -2,20 +2,26 @@ pub mod arrow_tower;
 
 use std::time::Duration;
 
-use crate::{common::{GameLayer, spawn_attack_distance}, skill::Skill};
+use crate::{
+    common::{GameLayer, spawn_attack_distance},
+    skill::Skill,
+};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use arrow_tower::ArrowTower;
 
-pub fn spawn_unit(commands: &mut Commands, asset_server: &AssetServer) {
+pub fn spawn_unit(
+    commands: &mut EntityCommands,
+    asset_server: &AssetServer,
+    position: Vec3,
+    name: Name,
+) {
     let image = asset_server.load("images/unit/TemporaryArrowTower.png");
-
-    let position = Vec3::new(0.0, 0.0, 0.0);
 
     let unit_layers = GameLayer::unit_layers();
 
-    let mut commands = commands.spawn((
+    let mut commands = commands.with_child((
         Unit,
         Sprite {
             image,
@@ -33,6 +39,7 @@ pub fn spawn_unit(commands: &mut Commands, asset_server: &AssetServer) {
         EnemyTargets::default(),
         CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
         Skill {},
+        name
     ));
 
     let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
