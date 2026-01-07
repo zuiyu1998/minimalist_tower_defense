@@ -6,16 +6,18 @@ pub use tile::*;
 
 use std::fmt::Debug;
 
-use bevy::prelude::*;
+use bevy::{input::mouse::MouseWheel, prelude::*};
 
 use crate::{MainCamera, screens::Screen};
+
+// The speed of camera movement.
+const CAMERA_MOUSE_WHEEL_ZOOM_SPEED: f32 = 0.25;
 
 #[derive(Debug, Clone, Default)]
 pub struct MapItemData {
     name: String,
     x: i32,
     y: i32,
-    position: Vec2,
 }
 
 #[derive(Debug, Resource)]
@@ -34,7 +36,6 @@ impl Default for MapData {
                 name: "hill".to_string(),
                 x: i,
                 y: 2,
-                position: Vec2::ZERO,
             });
         }
 
@@ -43,7 +44,6 @@ impl Default for MapData {
                 name: "hill".to_string(),
                 x: i,
                 y: -2,
-                position: Vec2::ZERO,
             });
         }
 
@@ -51,7 +51,6 @@ impl Default for MapData {
             name: "square".to_string(),
             x: 0,
             y: 0,
-            position: Vec2::ZERO,
         });
 
         MapData {
@@ -66,6 +65,43 @@ impl Default for MapData {
 pub struct MapPosition {
     x: i32,
     y: i32,
+}
+
+fn move_camera(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut mouse_wheel_reader: MessageReader<MouseWheel>,
+    mut cameras: Query<&mut Transform, With<MainCamera>>,
+    map_data: Res<MapData>,
+) {
+    let (mut distance_delta, mut position) = (0.0, Vec3::ZERO);
+
+    let size = (map_data.item_size + map_data.item_space_size) as f32;
+
+    // Handle keyboard events.
+    if keyboard_input.just_pressed(KeyCode::KeyW) {
+        position.y += size;
+    }
+    if keyboard_input.just_pressed(KeyCode::KeyS) {
+        position.y -= size;
+    }
+    if keyboard_input.just_pressed(KeyCode::KeyA) {
+        position.x -= size;
+    }
+    if keyboard_input.just_pressed(KeyCode::KeyD) {
+        position.x += size;
+    }
+
+    // Handle mouse events.
+    for mouse_wheel in mouse_wheel_reader.read() {
+        distance_delta -= mouse_wheel.y * CAMERA_MOUSE_WHEEL_ZOOM_SPEED;
+    }
+
+    // Update transforms.
+    for mut camera_transform in cameras.iter_mut() {
+        if position != Vec3::ZERO {
+            camera_transform.translation += position;
+        }
+    }
 }
 
 fn on_spawn_unit(
@@ -83,16 +119,17 @@ fn on_spawn_unit(
         map_item_data.y = map_positon.y;
         map_item_data.name = "arrow_tower".to_string();
 
-        map_item_data.position = get_item_position(
+        let position = get_item_position(
             map_item_data.x,
             map_item_data.y,
             map_data.item_size,
             map_data.item_space_size,
-        );
+        )
+        .extend(0.0);
 
         let mut commands = commands.entity(*map);
 
-        container.spawn_map_item(&mut commands, &asset_server, &map_item_data);
+        container.spawn_map_item(&mut commands, &asset_server, &map_item_data, position);
     }
 }
 
@@ -177,11 +214,12 @@ pub fn spawn_map(
     ));
 
     for item in map_data.items.iter() {
-        let mut item = item.clone();
-        item.position =
-            get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size);
+        let item = item.clone();
+        let position =
+            get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size)
+                .extend(0.0);
 
-        container.spawn_map_item(&mut commands, asset_server, &item);
+        container.spawn_map_item(&mut commands, asset_server, &item, position);
     }
 
     let image = asset_server.load("images/map/ButtonSelectLine3.png");
@@ -207,6 +245,6 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (update_map_position, on_spawn_unit).run_if(in_state(Screen::Gameplay)),
+        (update_map_position, on_spawn_unit, move_camera).run_if(in_state(Screen::Gameplay)),
     );
 }

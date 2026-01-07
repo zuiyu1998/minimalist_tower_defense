@@ -33,9 +33,10 @@ impl MapItemFactoryContainer {
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
         item_data: &MapItemData,
+        position: Vec3,
     ) {
         if let Some(factory) = self.get_map_item_factory(&item_data.name) {
-            factory.spawn_map_item(commands, asset_server, &item_data);
+            factory.spawn_map_item(commands, asset_server, &item_data, position);
         }
     }
 
@@ -58,6 +59,7 @@ pub trait MapItemFactory: 'static + Send + Sync + Debug {
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
         item_data: &MapItemData,
+        position: Vec3,
     );
 }
 
@@ -74,8 +76,9 @@ impl MapItemFactory for HillMapItemFactory {
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
         item_data: &MapItemData,
+        position: Vec3,
     ) {
-        spawn_hill_map_item(commands, asset_server, item_data);
+        spawn_hill_map_item(commands, asset_server, item_data, position);
     }
 }
 
@@ -91,13 +94,12 @@ impl MapItemFactory for ArrowTowerMapItemFactory {
         &self,
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
-        item_data: &MapItemData,
+        _item_data: &MapItemData,
+        position: Vec3,
     ) {
-        let position = Vec3::new(item_data.position.x, item_data.position.y, 0.0);
         spawn_unit(commands, asset_server, position, Name::new("ArrowTower"));
     }
 }
-
 
 #[derive(Debug)]
 pub struct SquareMapItemFactory;
@@ -111,9 +113,9 @@ impl MapItemFactory for SquareMapItemFactory {
         &self,
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
-        item_data: &MapItemData,
+        _item_data: &MapItemData,
+        position: Vec3,
     ) {
-        let position = Vec3::new(item_data.position.x, item_data.position.y, 0.0);
         spawn_enemy(commands, asset_server, position, Name::new("Square"));
     }
 }

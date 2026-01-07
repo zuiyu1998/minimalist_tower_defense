@@ -8,7 +8,8 @@ pub struct Hill;
 pub fn spawn_hill_map_item(
     commands: &mut EntityCommands,
     asset_server: &AssetServer,
-    map_item_data: &MapItemData,
+    _map_item_data: &MapItemData,
+    position: Vec3,
 ) {
     let image = asset_server.load("images/map/Hill.png");
 
@@ -20,7 +21,7 @@ pub fn spawn_hill_map_item(
             ..default()
         },
         Transform {
-            translation: Vec3::new(map_item_data.position.x, map_item_data.position.y, 0.0),
+            translation: position,
             ..default()
         },
     ));
