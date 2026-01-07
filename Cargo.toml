@@ -32,7 +32,7 @@ dev = [
     "bevy/bevy_ui_debug",
     # Improve error messages coming from Bevy
     "bevy/track_location",
-    "bevy-inspector-egui"
+    "bevy-inspector-egui",
 ]
 dev_native = [
     "dev",

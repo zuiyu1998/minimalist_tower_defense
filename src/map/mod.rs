@@ -6,12 +6,9 @@ pub use tile::*;
 
 use std::fmt::Debug;
 
-use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy::prelude::*;
 
 use crate::{MainCamera, screens::Screen};
-
-// The speed of camera movement.
-const CAMERA_MOUSE_WHEEL_ZOOM_SPEED: f32 = 0.25;
 
 #[derive(Debug, Clone, Default)]
 pub struct MapItemData {
@@ -23,8 +20,8 @@ pub struct MapItemData {
 #[derive(Debug, Resource)]
 pub struct MapData {
     items: Vec<MapItemData>,
-    item_size: i32,
-    item_space_size: i32,
+    pub item_size: i32,
+    pub item_space_size: i32,
 }
 
 impl Default for MapData {
@@ -65,43 +62,6 @@ impl Default for MapData {
 pub struct MapPosition {
     x: i32,
     y: i32,
-}
-
-fn move_camera(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut mouse_wheel_reader: MessageReader<MouseWheel>,
-    mut cameras: Query<&mut Transform, With<MainCamera>>,
-    map_data: Res<MapData>,
-) {
-    let (mut distance_delta, mut position) = (0.0, Vec3::ZERO);
-
-    let size = (map_data.item_size + map_data.item_space_size) as f32;
-
-    // Handle keyboard events.
-    if keyboard_input.just_pressed(KeyCode::KeyW) {
-        position.y += size;
-    }
-    if keyboard_input.just_pressed(KeyCode::KeyS) {
-        position.y -= size;
-    }
-    if keyboard_input.just_pressed(KeyCode::KeyA) {
-        position.x -= size;
-    }
-    if keyboard_input.just_pressed(KeyCode::KeyD) {
-        position.x += size;
-    }
-
-    // Handle mouse events.
-    for mouse_wheel in mouse_wheel_reader.read() {
-        distance_delta -= mouse_wheel.y * CAMERA_MOUSE_WHEEL_ZOOM_SPEED;
-    }
-
-    // Update transforms.
-    for mut camera_transform in cameras.iter_mut() {
-        if position != Vec3::ZERO {
-            camera_transform.translation += position;
-        }
-    }
 }
 
 fn on_spawn_unit(
@@ -245,6 +205,6 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (update_map_position, on_spawn_unit, move_camera).run_if(in_state(Screen::Gameplay)),
+        (update_map_position, on_spawn_unit).run_if(in_state(Screen::Gameplay)),
     );
 }

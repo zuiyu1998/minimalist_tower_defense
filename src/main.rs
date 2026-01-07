@@ -7,6 +7,7 @@ mod asset_tracking;
 mod audio;
 mod battle;
 mod bullet;
+mod camera;
 mod common;
 #[cfg(feature = "dev")]
 mod dev_tools;
@@ -23,6 +24,8 @@ pub mod skill;
 
 use avian2d::prelude::*;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+
+use crate::camera::PanCam;
 
 fn main() -> AppExit {
     App::new().add_plugins(AppPlugin).run()
@@ -53,8 +56,11 @@ impl Plugin for AppPlugin {
         // Add Bevy plugins.
         app.add_plugins(plugins);
 
+        app.add_plugins(camera::PanCamPlugin::default());
+
         // Add other plugins.
         app.add_plugins((
+            PhysicsPlugins::default(),
             asset_tracking::plugin,
             map::plugin,
             skill::plugin,
@@ -70,7 +76,6 @@ impl Plugin for AppPlugin {
             menus::plugin,
             screens::plugin,
             theme::plugin,
-            PhysicsPlugins::default(),
         ))
         .insert_resource(Gravity(Vec2::ZERO));
 
@@ -119,5 +124,5 @@ struct PausableSystems;
 pub struct MainCamera;
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn((Name::new("Camera"), Camera2d, MainCamera));
+    commands.spawn((Name::new("Camera"), Camera2d, MainCamera, PanCam::default()));
 }
