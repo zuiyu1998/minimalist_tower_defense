@@ -2,7 +2,11 @@ use std::fmt::Debug;
 
 use bevy::{platform::collections::HashMap, prelude::*};
 
-use crate::{enemy::spawn_enemy, map::spawn_hill_map_item, unit::spawn_unit};
+use crate::{
+    enemy::spawn_enemy,
+    map::spawn_hill_map_item,
+    unit::{UnitFactoryContainer, spawn_unit},
+};
 
 use super::MapItemData;
 
@@ -13,7 +17,7 @@ impl MapItemFactoryContainer {
     pub fn new() -> Self {
         let mut container = MapItemFactoryContainer::empty();
         container.register(HillMapItemFactory);
-        container.register(ArrowTowerMapItemFactory);
+        container.register(UnitMapItemFactory);
         container.register(SquareMapItemFactory);
 
         container
@@ -34,9 +38,16 @@ impl MapItemFactoryContainer {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
+        unit_factory_container: &UnitFactoryContainer,
     ) {
         if let Some(factory) = self.get_map_item_factory(&item_data.name) {
-            factory.spawn_map_item(commands, asset_server, &item_data, position);
+            factory.spawn_map_item(
+                commands,
+                asset_server,
+                &item_data,
+                position,
+                unit_factory_container,
+            );
         }
     }
 
@@ -60,6 +71,7 @@ pub trait MapItemFactory: 'static + Send + Sync + Debug {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
+        unit_factory_container: &UnitFactoryContainer,
     );
 }
 
@@ -77,27 +89,36 @@ impl MapItemFactory for HillMapItemFactory {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
+        _unit_factory_container: &UnitFactoryContainer,
     ) {
         spawn_hill_map_item(commands, asset_server, item_data, position);
     }
 }
 
 #[derive(Debug)]
-pub struct ArrowTowerMapItemFactory;
+pub struct UnitMapItemFactory;
 
-impl MapItemFactory for ArrowTowerMapItemFactory {
+impl MapItemFactory for UnitMapItemFactory {
     fn map_item_name(&self) -> &'static str {
-        "arrow_tower"
+        "unit"
     }
 
     fn spawn_map_item(
         &self,
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
-        _item_data: &MapItemData,
+        item_data: &MapItemData,
         position: Vec3,
+        unit_factory_container: &UnitFactoryContainer,
     ) {
-        spawn_unit(commands, asset_server, position, Name::new("ArrowTower"));
+        let unit_data = item_data.get_unit_data();
+        spawn_unit(
+            commands,
+            asset_server,
+            position,
+            &unit_data,
+            unit_factory_container,
+        );
     }
 }
 
@@ -115,6 +136,7 @@ impl MapItemFactory for SquareMapItemFactory {
         asset_server: &AssetServer,
         _item_data: &MapItemData,
         position: Vec3,
+        _unit_factory_container: &UnitFactoryContainer,
     ) {
         spawn_enemy(commands, asset_server, position, Name::new("Square"));
     }

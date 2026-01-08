@@ -1,58 +1,58 @@
 pub mod arrow_tower;
 
-use std::time::Duration;
+use std::{fmt::Debug, time::Duration};
 
 use crate::{
     common::{GameLayer, spawn_attack_distance},
     skill::Skill,
+    unit::arrow_tower::ArrowTowerFactory,
 };
 use avian2d::prelude::*;
-use bevy::prelude::*;
-
-use arrow_tower::ArrowTower;
+use bevy::{platform::collections::HashMap, prelude::*};
 
 pub fn spawn_unit(
     commands: &mut EntityCommands,
     asset_server: &AssetServer,
     position: Vec3,
-    name: Name,
+    data: &UnitData,
+    container: &UnitFactoryContainer,
 ) {
-    let image = asset_server.load("images/unit/TemporaryArrowTower.png");
+    if let Some(factory) = container.0.get(&data.item_name) {
+        let unit = Unit::from_data(data);
+        unit.spawn_unit(commands, asset_server, position, data, factory.as_ref());
+    } else {
+        tracing::error!("{} factory not match.", data.item_name);
+    }
+}
 
-    let unit_layers = GameLayer::unit_layers();
+#[derive(Debug, Resource)]
+pub struct UnitFactoryContainer(HashMap<String, Box<dyn UnitFactory>>);
 
-    let parent = commands.id();
+impl Default for UnitFactoryContainer {
+    fn default() -> Self {
+        let mut container = UnitFactoryContainer::empty();
+        container.register("arrow_tower", ArrowTowerFactory);
 
-    let mut commands = commands.commands();
+        container
+    }
+}
 
-    let mut entity_commands = commands.spawn((
-        Unit,
-        Sprite {
-            image,
-            custom_size: Some(Vec2::splat(128.0)),
-            ..default()
-        },
-        Transform {
-            translation: position,
-            ..default()
-        },
-        RigidBody::Static,
-        Collider::rectangle(100.0, 100.0),
-        unit_layers,
-        ArrowTower,
-        EnemyTargets::default(),
-        CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
-        Skill {},
-        name,
-    ));
+impl UnitFactoryContainer {
+    pub fn register<T: UnitFactory>(&mut self, name: &str, value: T) {
+        self.0.insert(name.to_string(), Box::new(value));
+    }
 
-    let unit = entity_commands.id();
+    pub fn empty() -> Self {
+        UnitFactoryContainer(Default::default())
+    }
+}
 
-    let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
+pub struct UnitData {
+   pub item_name: String,
+}
 
-    spawn_attack_distance(&mut entity_commands, 500.0, unit_attack_distance_layers);
-
-    commands.entity(parent).add_child(unit);
+pub trait UnitFactory: 'static + Send + Sync + Debug {
+    fn spawn(&self, data: &UnitData, commands: &mut EntityCommands);
 }
 
 #[derive(Debug, Component, Default)]
@@ -61,8 +61,60 @@ pub struct EnemyTargets(Vec<Entity>);
 #[derive(Debug, Component)]
 pub struct CooldownTimer(Timer);
 
-#[derive(Debug, Component)]
-pub struct Unit;
+#[derive(Debug, Component, Clone, Default)]
+pub struct Unit {}
+
+impl Unit {
+    pub fn from_data(_data: &UnitData) -> Self {
+        Unit {}
+    }
+
+    pub fn spawn_unit(
+        &self,
+        commands: &mut EntityCommands,
+        asset_server: &AssetServer,
+        position: Vec3,
+        data: &UnitData,
+        factory: &dyn UnitFactory,
+    ) {
+        let image = asset_server.load("images/unit/TemporaryArrowTower.png");
+
+        let unit_layers = GameLayer::unit_layers();
+
+        let parent = commands.id();
+
+        let mut commands = commands.commands();
+
+        let mut entity_commands = commands.spawn((
+            self.clone(),
+            Sprite {
+                image,
+                custom_size: Some(Vec2::splat(128.0)),
+                ..default()
+            },
+            Transform {
+                translation: position,
+                ..default()
+            },
+            RigidBody::Static,
+            Collider::rectangle(100.0, 100.0),
+            unit_layers,
+            EnemyTargets::default(),
+            CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
+            Skill {},
+        ));
+
+        factory.spawn(data, &mut entity_commands);
+
+        let unit = entity_commands.id();
+
+        let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
+
+        spawn_attack_distance(&mut entity_commands, 500.0, unit_attack_distance_layers);
+
+        commands.entity(parent).add_child(unit);
+    }
+}
 
 pub(super) fn plugin(app: &mut App) {
     arrow_tower::plugin(app);

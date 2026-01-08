@@ -8,13 +8,26 @@ use std::fmt::Debug;
 
 use bevy::prelude::*;
 
-use crate::{MainCamera, screens::Screen};
+use crate::{
+    MainCamera,
+    screens::Screen,
+    unit::{UnitData, UnitFactoryContainer},
+};
 
 #[derive(Debug, Clone, Default)]
 pub struct MapItemData {
     name: String,
+    unit_name: String,
     x: i32,
     y: i32,
+}
+
+impl MapItemData {
+    pub fn get_unit_data(&self) -> UnitData {
+        UnitData {
+            item_name: self.unit_name.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Resource)]
@@ -22,6 +35,11 @@ pub struct MapData {
     items: Vec<MapItemData>,
     pub item_size: i32,
     pub item_space_size: i32,
+}
+
+#[derive(Debug, Resource, Default)]
+pub struct MapState {
+    pub selelcted_map_item_data: Option<MapItemData>,
 }
 
 impl Default for MapData {
@@ -33,6 +51,7 @@ impl Default for MapData {
                 name: "hill".to_string(),
                 x: i,
                 y: 2,
+                ..default()
             });
         }
 
@@ -41,6 +60,7 @@ impl Default for MapData {
                 name: "hill".to_string(),
                 x: i,
                 y: -2,
+                ..default()
             });
         }
 
@@ -48,6 +68,7 @@ impl Default for MapData {
             name: "square".to_string(),
             x: 0,
             y: 0,
+            ..default()
         });
 
         MapData {
@@ -72,12 +93,15 @@ fn on_spawn_unit(
     container: Res<MapItemFactoryContainer>,
     map: Single<Entity, With<Map>>,
     map_positon: Single<&MapPosition>,
+    map_state: Res<MapState>,
+    unit_factory_container: Res<UnitFactoryContainer>,
 ) {
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        let mut map_item_data = MapItemData::default();
+    if map_state.selelcted_map_item_data.is_some()
+        && mouse_button_input.just_pressed(MouseButton::Left)
+    {
+        let mut map_item_data = map_state.selelcted_map_item_data.clone().unwrap();
         map_item_data.x = map_positon.x;
         map_item_data.y = map_positon.y;
-        map_item_data.name = "arrow_tower".to_string();
 
         let position = get_item_position(
             map_item_data.x,
@@ -89,7 +113,13 @@ fn on_spawn_unit(
 
         let mut commands = commands.entity(*map);
 
-        container.spawn_map_item(&mut commands, &asset_server, &map_item_data, position);
+        container.spawn_map_item(
+            &mut commands,
+            &asset_server,
+            &map_item_data,
+            position,
+            &unit_factory_container,
+        );
     }
 }
 
@@ -164,6 +194,7 @@ pub fn spawn_map(
     asset_server: &AssetServer,
     map_data: &MapData,
     container: &MapItemFactoryContainer,
+    unit_factory_container: &UnitFactoryContainer,
 ) {
     let mut commands = command.spawn((
         Map,
@@ -179,7 +210,13 @@ pub fn spawn_map(
             get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size)
                 .extend(0.0);
 
-        container.spawn_map_item(&mut commands, asset_server, &item, position);
+        container.spawn_map_item(
+            &mut commands,
+            asset_server,
+            &item,
+            position,
+            unit_factory_container,
+        );
     }
 
     let image = asset_server.load("images/map/ButtonSelectLine3.png");
@@ -202,6 +239,7 @@ pub fn spawn_map(
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<MapData>();
     app.init_resource::<MapItemFactoryContainer>();
+    app.init_resource::<MapState>();
 
     app.add_systems(
         Update,

@@ -6,8 +6,17 @@ use crate::{
     common::{AttackDistance, GameLayer},
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
-    unit::{CooldownTimer, EnemyTargets},
+    unit::{CooldownTimer, EnemyTargets, UnitData, UnitFactory},
 };
+
+#[derive(Debug)]
+pub struct ArrowTowerFactory;
+
+impl UnitFactory for ArrowTowerFactory {
+    fn spawn(&self, _data: &UnitData, commands: &mut EntityCommands) {
+        commands.insert((ArrowTower, Name::new("ArrowTower")));
+    }
+}
 
 #[derive(Debug, Component)]
 pub struct ArrowTower;
