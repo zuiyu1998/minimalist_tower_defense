@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     map::{MapData, MapItemFactoryContainer, spawn_map},
     player::Player,
-    unit::UnitFactoryContainer,
+    unit::{UnitFactoryContainer, spawn_unit_data_collection_panel},
 };
 
 pub(super) fn plugin(_app: &mut App) {}
@@ -24,4 +24,6 @@ pub fn spawn_level(
         &container,
         &unit_factory_container,
     );
+
+    spawn_unit_data_collection_panel(&mut commands);
 }
