@@ -10,50 +10,6 @@ use crate::{
 use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
-fn button(_asset_server: &AssetServer, _unit_data: &UnitData) -> impl Bundle {
-    (Node {
-        width: px(64),
-        height: px(64),
-        ..default()
-    },)
-}
-
-fn panel(_asset_server: &AssetServer, _collection: &UnitDataCollection) -> impl Bundle {
-    (
-        Node {
-            width: percent(100),
-            height: percent(100),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Start,
-            ..default()
-        },
-        Name::new("UnitDataCollectionPanel"),
-        children![(
-            Node {
-                width: px(150),
-                height: percent(100),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            children![]
-        )],
-    )
-}
-
-pub fn spawn_unit_data_collection_panel(
-    commands: &mut Commands,
-    asset_server: &AssetServer,
-    collection: &UnitDataCollection,
-) {
-    commands.spawn(panel(asset_server, collection));
-}
-
-#[derive(Debug, Resource, Default)]
-pub struct UnitDataCollection {
-    items: Vec<UnitData>,
-}
-
 pub fn spawn_unit(
     commands: &mut EntityCommands,
     asset_server: &AssetServer,
@@ -91,9 +47,16 @@ impl UnitFactoryContainer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnitData {
     pub item_name: String,
+    pub image: String,
+}
+
+impl UnitData {
+    pub fn get_unit_image(&self, asset_server: &AssetServer) -> Handle<Image> {
+        asset_server.load(&format!("images/unit/{}.png", self.image))
+    }
 }
 
 pub trait UnitFactory: 'static + Send + Sync + Debug {
@@ -122,7 +85,7 @@ impl Unit {
         data: &UnitData,
         factory: &dyn UnitFactory,
     ) {
-        let image = asset_server.load("images/unit/TemporaryArrowTower.png");
+        let image = data.get_unit_image(asset_server);
 
         let unit_layers = GameLayer::unit_layers();
 
@@ -163,7 +126,6 @@ impl Unit {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
-    app.init_resource::<UnitDataCollection>();
 
     arrow_tower::plugin(app);
 }

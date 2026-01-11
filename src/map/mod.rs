@@ -17,7 +17,8 @@ use crate::{
 #[derive(Debug, Clone, Default)]
 pub struct MapItemData {
     name: String,
-    unit_name: String,
+    unit_item_name: String,
+    unit_image: String,
     x: i32,
     y: i32,
 }
@@ -25,7 +26,17 @@ pub struct MapItemData {
 impl MapItemData {
     pub fn get_unit_data(&self) -> UnitData {
         UnitData {
-            item_name: self.unit_name.clone(),
+            item_name: self.unit_item_name.clone(),
+            image: self.unit_image.clone(),
+        }
+    }
+
+    pub fn from_unit_data(unit_data: &UnitData) -> Self {
+        Self {
+            name: "unit".to_string(),
+            unit_item_name: unit_data.item_name.to_string(),
+            unit_image: unit_data.image.to_string(),
+            ..default()
         }
     }
 }
