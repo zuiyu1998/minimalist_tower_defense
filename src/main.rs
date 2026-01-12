@@ -56,7 +56,7 @@ impl Plugin for AppPlugin {
         // Add Bevy plugins.
         app.add_plugins(plugins);
 
-        app.add_plugins(camera::PanCamPlugin::default());
+        app.add_plugins((camera::PanCamPlugin::default(), MeshPickingPlugin));
 
         // Add other plugins.
         app.add_plugins((

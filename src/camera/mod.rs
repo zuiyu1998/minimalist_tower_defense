@@ -42,34 +42,6 @@ pub struct DirectionKeys {
 }
 
 impl DirectionKeys {
-    /// No keys move the camera
-    pub const NONE: Self = Self {
-        up: vec![],
-        down: vec![],
-        left: vec![],
-        right: vec![],
-    };
-
-    /// The camera is moved by the arrow keys
-    pub fn arrows() -> Self {
-        Self {
-            up: vec![KeyCode::ArrowUp],
-            down: vec![KeyCode::ArrowDown],
-            left: vec![KeyCode::ArrowLeft],
-            right: vec![KeyCode::ArrowRight],
-        }
-    }
-
-    /// The camera is moved by the WASD keys
-    pub fn wasd() -> Self {
-        Self {
-            up: vec![KeyCode::KeyW],
-            down: vec![KeyCode::KeyS],
-            left: vec![KeyCode::KeyA],
-            right: vec![KeyCode::KeyD],
-        }
-    }
-
     /// The camera is moved by the arrow and WASD keys
     pub fn arrows_and_wasd() -> Self {
         Self {
