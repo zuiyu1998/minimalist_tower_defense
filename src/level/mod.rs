@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::relationship::RelatedSpawnerCommands, prelude::*};
 
 use crate::{
     map::{MapData, MapItemData, MapItemFactoryContainer, MapState, spawn_map},
@@ -27,35 +27,44 @@ fn unit_data_button_system(
     }
 }
 
-fn on_unit_data_button(event: On<Pointer<Over>>) {
-    println!("I am being hovered over");
+fn on_unit_data_button_out(_event: On<Pointer<Out>>, mut map_state: ResMut<MapState>) {
+    map_state.enable = true;
 }
 
-fn button(asset_server: &AssetServer, unit_data: &UnitData) -> impl Bundle {
+fn on_unit_data_button_over(_event: On<Pointer<Over>>, mut map_state: ResMut<MapState>) {
+    map_state.enable = false;
+}
+
+fn button(
+    commands: &mut RelatedSpawnerCommands<ChildOf>,
+    asset_server: &AssetServer,
+    unit_data: &UnitData,
+) {
     let image: ImageNode = unit_data.get_unit_image(asset_server).into();
 
-    (
-        Node {
-            width: px(64),
-            height: px(64),
-            ..default()
-        },
-        image,
-        Button,
-        UnitDataButton {
-            unit_data: unit_data.clone(),
-        },
-        Pickable::IGNORE,
-        children![(
+    commands
+        .spawn((
             Node {
                 width: px(64),
                 height: px(64),
                 ..default()
             },
-            Observer::new(on_unit_data_button),
-            Pickable::default(),
-        )],
-    )
+            image,
+            Button,
+            UnitDataButton {
+                unit_data: unit_data.clone(),
+            },
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn(Node {
+                    width: px(64),
+                    height: px(64),
+                    ..default()
+                })
+                .observe(on_unit_data_button_out)
+                .observe(on_unit_data_button_over);
+        });
 }
 
 pub fn spawn_unit_data_collection_panel(
@@ -74,23 +83,19 @@ pub fn spawn_unit_data_collection_panel(
             },
             Name::new("UnitDataCollectionPanel"),
             DespawnOnExit(Screen::Gameplay),
-            Pickable::IGNORE,
         ))
         .with_children(|parent| {
             parent
-                .spawn((
-                    Node {
-                        width: px(150),
-                        height: percent(100),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ))
+                .spawn((Node {
+                    width: px(150),
+                    height: percent(100),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },))
                 .with_children(|parent| {
                     for data in collection.items.iter() {
-                        parent.spawn(button(asset_server, data));
+                        button(parent, asset_server, data);
                     }
                 });
         });

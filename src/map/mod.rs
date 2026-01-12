@@ -51,6 +51,7 @@ pub struct MapData {
 #[derive(Debug, Resource, Default)]
 pub struct MapState {
     pub selelcted_map_item_data: Option<MapItemData>,
+    pub enable: bool,
 }
 
 impl Default for MapData {
@@ -104,10 +105,11 @@ fn on_spawn_unit(
     container: Res<MapItemFactoryContainer>,
     map: Single<Entity, With<Map>>,
     map_positon: Single<&MapPosition>,
-    map_state: Res<MapState>,
+    mut map_state: ResMut<MapState>,
     unit_factory_container: Res<UnitFactoryContainer>,
 ) {
-    if map_state.selelcted_map_item_data.is_some()
+    if map_state.enable
+        && map_state.selelcted_map_item_data.is_some()
         && mouse_button_input.just_pressed(MouseButton::Left)
     {
         let mut map_item_data = map_state.selelcted_map_item_data.clone().unwrap();
@@ -131,6 +133,8 @@ fn on_spawn_unit(
             position,
             &unit_factory_container,
         );
+
+        map_state.enable = false;
     }
 }
 

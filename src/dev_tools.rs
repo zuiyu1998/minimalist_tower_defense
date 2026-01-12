@@ -2,7 +2,9 @@
 
 use avian2d::prelude::*;
 use bevy::{
-    dev_tools::states::log_transitions, input::common_conditions::input_just_pressed, prelude::*,
+    dev_tools::{picking_debug::DebugPickingPlugin, states::log_transitions},
+    input::common_conditions::input_just_pressed,
+    prelude::*,
 };
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
@@ -13,6 +15,7 @@ pub(super) fn plugin(app: &mut App) {
         PhysicsDebugPlugin,
         EguiPlugin::default(),
         WorldInspectorPlugin::new(),
+        DebugPickingPlugin,
     ));
 
     // Log `Screen` state transitions.
