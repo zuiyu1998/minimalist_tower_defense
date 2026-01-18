@@ -19,6 +19,7 @@ pub struct MapItemData {
     name: String,
     unit_item_name: String,
     unit_image: String,
+    enemy_item_name: String,
     x: i32,
     y: i32,
 }
@@ -102,8 +103,7 @@ fn on_spawn_unit(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     map_data: Res<MapData>,
-    container: Res<MapItemFactoryContainer>,
-    map: Single<Entity, With<Map>>,
+    map: Single<(Entity, &Map)>,
     map_positon: Single<&MapPosition>,
     mut map_state: ResMut<MapState>,
     unit_factory_container: Res<UnitFactoryContainer>,
@@ -124,9 +124,11 @@ fn on_spawn_unit(
         )
         .extend(0.0);
 
-        let mut commands = commands.entity(*map);
+        let (map_entity, map) = map.into_inner();
 
-        container.spawn_map_item(
+        let mut commands = commands.entity(map_entity);
+
+        map.item_factory_container.spawn_map_item(
             &mut commands,
             &asset_server,
             &map_item_data,
@@ -135,6 +137,7 @@ fn on_spawn_unit(
         );
 
         map_state.enable = false;
+        map_state.selelcted_map_item_data = None;
     }
 }
 
@@ -184,8 +187,10 @@ fn update_map_position(
     map_position.1.y = position_i.y;
 }
 
-#[derive(Debug, Component)]
-pub struct Map;
+#[derive(Debug, Component, Default)]
+pub struct Map {
+    item_factory_container: MapItemFactoryContainer,
+}
 
 fn get_item_position_i(x: f32, y: f32, item_size: i32, item_space_size: i32) -> IVec2 {
     let x = (x / (item_size + item_space_size) as f32).floor() as i32;
@@ -208,11 +213,11 @@ pub fn spawn_map(
     command: &mut Commands,
     asset_server: &AssetServer,
     map_data: &MapData,
-    container: &MapItemFactoryContainer,
     unit_factory_container: &UnitFactoryContainer,
 ) {
+    let map = Map::default();
+
     let mut commands = command.spawn((
-        Map,
         Name::new("Map"),
         Transform::default(),
         DespawnOnExit(Screen::Gameplay),
@@ -225,7 +230,7 @@ pub fn spawn_map(
             get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size)
                 .extend(0.0);
 
-        container.spawn_map_item(
+        map.item_factory_container.spawn_map_item(
             &mut commands,
             asset_server,
             &item,
@@ -249,11 +254,12 @@ pub fn spawn_map(
             ..default()
         },
     ));
+
+    commands.insert(map);
 }
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<MapData>();
-    app.init_resource::<MapItemFactoryContainer>();
     app.init_resource::<MapState>();
 
     app.add_systems(

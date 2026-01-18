@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use bevy::{platform::collections::HashMap, prelude::*};
 
 use crate::{
-    enemy::spawn_enemy,
+    enemy::EnemySpawnerContainer,
     map::spawn_hill_map_item,
     unit::{UnitFactoryContainer, spawn_unit},
 };
@@ -18,7 +18,7 @@ impl MapItemFactoryContainer {
         let mut container = MapItemFactoryContainer::empty();
         container.register(HillMapItemFactory);
         container.register(UnitMapItemFactory);
-        container.register(SquareMapItemFactory);
+        container.register(EnemyMapItemFactory::default());
 
         container
     }
@@ -122,22 +122,24 @@ impl MapItemFactory for UnitMapItemFactory {
     }
 }
 
-#[derive(Debug)]
-pub struct SquareMapItemFactory;
+#[derive(Debug, Default)]
+pub struct EnemyMapItemFactory {
+    data: EnemySpawnerContainer,
+}
 
-impl MapItemFactory for SquareMapItemFactory {
+impl MapItemFactory for EnemyMapItemFactory {
     fn map_item_name(&self) -> &'static str {
-        "square"
+        "enemy"
     }
 
     fn spawn_map_item(
         &self,
         commands: &mut EntityCommands,
         asset_server: &AssetServer,
-        _item_data: &MapItemData,
+        item_data: &MapItemData,
         position: Vec3,
         _unit_factory_container: &UnitFactoryContainer,
     ) {
-        spawn_enemy(commands, asset_server, position, Name::new("Square"));
+       self.data.spawn_enemy(commands, asset_server, position, &item_data.enemy_item_name);
     }
 }

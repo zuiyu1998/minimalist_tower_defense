@@ -1,7 +1,7 @@
 use bevy::{ecs::relationship::RelatedSpawnerCommands, prelude::*};
 
 use crate::{
-    map::{MapData, MapItemData, MapItemFactoryContainer, MapState, spawn_map},
+    map::{MapData, MapItemData, MapState, spawn_map},
     player::Player,
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
@@ -132,7 +132,6 @@ pub fn spawn_level(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     map_data: Res<MapData>,
-    container: Res<MapItemFactoryContainer>,
     unit_factory_container: Res<UnitFactoryContainer>,
     collection: Res<UnitDataCollection>,
 ) {
@@ -142,7 +141,6 @@ pub fn spawn_level(
         &mut commands,
         &asset_server,
         &map_data,
-        &container,
         &unit_factory_container,
     );
 
