@@ -1,4 +1,5 @@
 mod item_data_factory;
+mod lair;
 mod tile;
 
 pub use item_data_factory::*;
@@ -10,6 +11,7 @@ use bevy::prelude::*;
 
 use crate::{
     MainCamera,
+    map::lair::spawn_lair,
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
 };
@@ -255,12 +257,21 @@ pub fn spawn_map(
         },
     ));
 
+    let lair = {
+        let mut commands = commands.commands();
+        spawn_lair(&mut commands)
+    };
+
+    commands.add_child(lair);
+
     commands.insert(map);
 }
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<MapData>();
     app.init_resource::<MapState>();
+
+    app.add_plugins(lair::plugin);
 
     app.add_systems(
         Update,
