@@ -1,7 +1,9 @@
+mod environment;
 mod item_data_factory;
 mod lair;
 mod tile;
 
+pub use environment::*;
 pub use item_data_factory::*;
 pub use tile::*;
 
@@ -224,6 +226,7 @@ pub fn spawn_map(
         Transform::default(),
         DespawnOnExit(Screen::Gameplay),
         Visibility::Visible,
+        MapEnvironment::default(),
     ));
 
     for item in map_data.items.iter() {
