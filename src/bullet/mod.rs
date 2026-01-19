@@ -1,5 +1,5 @@
 use avian2d::prelude::*;
-use bevy::prelude::*;
+use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::common::{GameLayer, Stas, spawn_hit};
 
@@ -8,11 +8,11 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn apply(
-    commands: &mut Commands,
     stats_q: &mut Query<&mut Stas>,
     bullet_q: &Query<(&Bullet, Entity)>,
     bullet_entity: Entity,
     stats_entity: Entity,
+    die_set: &mut HashSet<Entity>,
 ) {
     if let Ok((_bullet, entity)) = bullet_q.get(bullet_entity) {
         tracing::info!("bullet attack start");
@@ -20,11 +20,10 @@ fn apply(
         if let Ok(mut stats) = stats_q.get_mut(stats_entity) {
             stats.update_health(-5);
             if stats.is_die() {
-                commands.entity(stats_entity).despawn();
+                die_set.insert(stats_entity);
             }
         }
-
-        commands.entity(entity).despawn();
+        die_set.insert(entity);
     }
 }
 
@@ -34,6 +33,8 @@ fn on_bullet_attack(
     bullet_q: Query<(&Bullet, Entity)>,
     mut stats_q: Query<&mut Stas>,
 ) {
+    let mut die_set = HashSet::new();
+
     for event in collision_reader.read() {
         if event.body1.is_none() || event.body2.is_none() {
             continue;
@@ -41,8 +42,12 @@ fn on_bullet_attack(
         let body1 = event.body1.clone().unwrap();
         let body2 = event.body2.clone().unwrap();
 
-        apply(&mut commands, &mut stats_q, &bullet_q, body1, body2);
-        apply(&mut commands, &mut stats_q, &bullet_q, body2, body1);
+        apply(&mut stats_q, &bullet_q, body1, body2, &mut die_set);
+        apply(&mut stats_q, &bullet_q, body2, body1, &mut die_set);
+    }
+
+    for entity in die_set.iter() {
+        commands.entity(*entity).despawn();
     }
 }
 
