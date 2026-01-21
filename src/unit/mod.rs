@@ -10,6 +10,23 @@ use crate::{common::GameLayer, skill::Skill};
 use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
+//更新技能冷却
+fn on_cooldown_timer_update(
+    mut commands: Commands,
+    mut cooldown_timer_q: Query<(&mut CooldownTimer, &mut Unit, Entity)>,
+    time: Res<Time>,
+) {
+    for (mut cooldown_timer, mut unit, entity) in cooldown_timer_q.iter_mut() {
+        cooldown_timer.0.tick(time.delta());
+
+        if cooldown_timer.0.just_finished() {
+            unit.cooling_down = false;
+
+            commands.entity(entity).remove::<CooldownTimer>();
+        }
+    }
+}
+
 pub fn spawn_unit(
     commands: &mut EntityCommands,
     asset_server: &AssetServer,
@@ -70,12 +87,24 @@ pub struct EnemyTargets(Vec<Entity>);
 #[derive(Debug, Component)]
 pub struct CooldownTimer(Timer);
 
+impl CooldownTimer {
+    pub fn new(secs: u64) -> Self {
+        CooldownTimer(Timer::new(Duration::from_secs(secs), TimerMode::Once))
+    }
+}
+
 #[derive(Debug, Component, Clone, Default)]
-pub struct Unit {}
+pub struct Unit {
+    cooling_down: bool,
+    cooldown_timer: u64,
+}
 
 impl Unit {
     pub fn from_data(_data: &UnitData) -> Self {
-        Unit {}
+        Unit {
+            cooling_down: false,
+            cooldown_timer: 1,
+        }
     }
 
     pub fn spawn_unit(
@@ -107,7 +136,7 @@ impl Unit {
             Collider::rectangle(100.0, 100.0),
             unit_layers,
             EnemyTargets::default(),
-            CooldownTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
+            CooldownTimer::new(self.cooldown_timer),
             Skill {},
         ));
 
@@ -117,6 +146,7 @@ impl Unit {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
+    app.add_systems(Update, on_cooldown_timer_update);
 
     arrow_tower::plugin(app);
     bonfire::plugin(app);

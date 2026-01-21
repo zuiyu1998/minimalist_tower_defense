@@ -6,7 +6,7 @@ use crate::{
     common::{AttackDistance, GameLayer, spawn_attack_distance},
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
-    unit::{CooldownTimer, EnemyTargets, UnitData, UnitFactory},
+    unit::{CooldownTimer, EnemyTargets, Unit, UnitData, UnitFactory},
 };
 
 #[derive(Debug)]
@@ -49,27 +49,16 @@ fn check_enemy_targets(
 }
 
 //更新
-fn on_cooldown_timer_update(
+fn process(
     mut commands: Commands,
     mut cooldown_timer_q: Query<
-        (
-            &mut CooldownTimer,
-            &Skill,
-            Entity,
-            &EnemyTargets,
-            &GlobalTransform,
-        ),
+        (&mut Unit, &Skill, Entity, &EnemyTargets, &GlobalTransform),
         With<ArrowTower>,
     >,
     enemy_q: Query<&GlobalTransform, With<Enemy>>,
-    time: Res<Time>,
 ) {
-    for (mut cooldown_timer, skill, entity, enemy_targets, unit_position) in
-        cooldown_timer_q.iter_mut()
-    {
-        cooldown_timer.0.tick(time.delta());
-
-        if cooldown_timer.0.just_finished() {
+    for (mut unit, skill, entity, enemy_targets, unit_position) in cooldown_timer_q.iter_mut() {
+        if !unit.cooling_down {
             if enemy_targets.0.is_empty() {
                 return;
             }
@@ -95,6 +84,11 @@ fn on_cooldown_timer_update(
 
             tracing::debug!("Skill start.");
             battle::execute_skill(&mut commands, skill, entity, vec![target], None, data);
+
+            unit.cooling_down = true;
+            commands
+                .entity(entity)
+                .insert(CooldownTimer::new(unit.cooldown_timer));
         }
     }
 }
@@ -119,5 +113,5 @@ fn find_enemy(
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (check_enemy_targets, find_enemy).chain());
-    app.add_systems(FixedUpdate, (on_cooldown_timer_update,).chain());
+    app.add_systems(FixedUpdate, (process,).chain());
 }
