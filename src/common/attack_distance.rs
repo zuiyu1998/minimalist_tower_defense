@@ -5,15 +5,17 @@ use bevy::prelude::*;
 pub struct AttackDistance;
 
 pub fn spawn_attack_distance(
-    commmads: &mut EntityCommands,
+    commmads: &mut Commands,
     circle: f32,
     collision_layers: CollisionLayers,
-) {
-    commmads.with_child((
-        Collider::circle(circle),
-        Sensor,
-        AttackDistance,
-        collision_layers,
-        CollisionEventsEnabled,
-    ));
+) -> Entity {
+    commmads
+        .spawn((
+            Collider::circle(circle),
+            Sensor,
+            AttackDistance,
+            collision_layers,
+            CollisionEventsEnabled,
+        ))
+        .id()
 }

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use crate::{
     battle::{self, BulletContext},
-    common::{AttackDistance, GameLayer},
+    common::{AttackDistance, GameLayer, spawn_attack_distance},
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
     unit::{CooldownTimer, EnemyTargets, UnitData, UnitFactory},
@@ -13,8 +13,17 @@ use crate::{
 pub struct ArrowTowerFactory;
 
 impl UnitFactory for ArrowTowerFactory {
-    fn spawn(&self, _data: &UnitData, commands: &mut EntityCommands) {
-        commands.insert((ArrowTower, Name::new("ArrowTower")));
+    fn spawn(&self, _data: &UnitData, entity_commands: &mut EntityCommands) {
+        entity_commands.insert((ArrowTower, Name::new("ArrowTower")));
+
+        let mut command = entity_commands.commands();
+
+        let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
+
+        let unit_attack_distance =
+            spawn_attack_distance(&mut command, 500.0, unit_attack_distance_layers);
+
+        entity_commands.add_child(unit_attack_distance);
     }
 }
 

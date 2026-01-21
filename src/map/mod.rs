@@ -23,7 +23,6 @@ pub struct MapItemData {
     name: String,
     unit_item_name: String,
     unit_image: String,
-    enemy_item_name: String,
     x: i32,
     y: i32,
 }
@@ -82,7 +81,9 @@ impl Default for MapData {
         }
 
         items.push(MapItemData {
-            name: "square".to_string(),
+            name: "unit".to_string(),
+            unit_item_name: "bonfire".to_string(),
+            unit_image: "TemporaryArrowTower".to_string(),
             x: 0,
             y: 0,
             ..default()

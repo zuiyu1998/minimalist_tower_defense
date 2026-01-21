@@ -1,12 +1,12 @@
-pub mod arrow_tower;
+mod arrow_tower;
+mod bonfire;
+
+pub use arrow_tower::*;
+pub use bonfire::*;
 
 use std::{fmt::Debug, time::Duration};
 
-use crate::{
-    common::{GameLayer, spawn_attack_distance},
-    skill::Skill,
-    unit::arrow_tower::ArrowTowerFactory,
-};
+use crate::{common::GameLayer, skill::Skill};
 use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
@@ -32,6 +32,7 @@ impl Default for UnitFactoryContainer {
     fn default() -> Self {
         let mut container = UnitFactoryContainer::empty();
         container.register("arrow_tower", ArrowTowerFactory);
+        container.register("bonfire", BonfireFactory);
 
         container
     }
@@ -60,7 +61,7 @@ impl UnitData {
 }
 
 pub trait UnitFactory: 'static + Send + Sync + Debug {
-    fn spawn(&self, data: &UnitData, commands: &mut EntityCommands);
+    fn spawn(&self, data: &UnitData, entity_commands: &mut EntityCommands);
 }
 
 #[derive(Debug, Component, Default)]
@@ -89,8 +90,6 @@ impl Unit {
 
         let unit_layers = GameLayer::unit_layers();
 
-        let parent = commands.id();
-
         let mut commands = commands.commands();
 
         let mut entity_commands = commands.spawn((
@@ -113,14 +112,6 @@ impl Unit {
         ));
 
         factory.spawn(data, &mut entity_commands);
-
-        let unit = entity_commands.id();
-
-        let unit_attack_distance_layers = GameLayer::unit_attack_distance_layers();
-
-        spawn_attack_distance(&mut entity_commands, 500.0, unit_attack_distance_layers);
-
-        commands.entity(parent).add_child(unit);
     }
 }
 
@@ -128,4 +119,5 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
 
     arrow_tower::plugin(app);
+    bonfire::plugin(app);
 }

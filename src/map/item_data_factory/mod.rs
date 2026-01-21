@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use bevy::{platform::collections::HashMap, prelude::*};
 
 use crate::{
-    enemy::EnemySpawnerContainer,
     map::spawn_hill_map_item,
     unit::{UnitFactoryContainer, spawn_unit},
 };
@@ -18,7 +17,6 @@ impl MapItemFactoryContainer {
         let mut container = MapItemFactoryContainer::empty();
         container.register(HillMapItemFactory);
         container.register(UnitMapItemFactory);
-        container.register(EnemyMapItemFactory::default());
 
         container
     }
@@ -119,27 +117,5 @@ impl MapItemFactory for UnitMapItemFactory {
             &unit_data,
             unit_factory_container,
         );
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct EnemyMapItemFactory {
-    data: EnemySpawnerContainer,
-}
-
-impl MapItemFactory for EnemyMapItemFactory {
-    fn map_item_name(&self) -> &'static str {
-        "enemy"
-    }
-
-    fn spawn_map_item(
-        &self,
-        commands: &mut EntityCommands,
-        asset_server: &AssetServer,
-        item_data: &MapItemData,
-        position: Vec3,
-        _unit_factory_container: &UnitFactoryContainer,
-    ) {
-       self.data.spawn_enemy(commands, asset_server, position, &item_data.enemy_item_name);
     }
 }

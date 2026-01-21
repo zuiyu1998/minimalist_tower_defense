@@ -7,6 +7,7 @@ pub use hit_hurt::*;
 pub use stas::*;
 
 use avian2d::prelude::*;
+use bevy::prelude::*;
 
 #[derive(PhysicsLayer, Default)]
 pub enum GameLayer {
@@ -17,6 +18,10 @@ pub enum GameLayer {
     UnitHitbox,   // Layer 3 攻击框
     EnemyHurtbox, // Layer 4 受击框
 }
+
+// 光源
+#[derive(Debug, Component)]
+pub struct LightSource;
 
 impl GameLayer {
     pub fn default_layers() -> CollisionLayers {
