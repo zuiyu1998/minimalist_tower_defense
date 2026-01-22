@@ -19,6 +19,7 @@ mod player;
 mod screens;
 mod theme;
 mod unit;
+mod product;
 
 pub mod skill;
 
