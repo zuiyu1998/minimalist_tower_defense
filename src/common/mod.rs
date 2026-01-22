@@ -1,10 +1,12 @@
 mod attack_distance;
 mod hit_hurt;
 mod stas;
+mod sunlight;
 
 pub use attack_distance::*;
 pub use hit_hurt::*;
 pub use stas::*;
+pub use sunlight::*;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;

@@ -27,6 +27,21 @@ fn on_cooldown_timer_update(
     }
 }
 
+fn add_cooldown_timer(
+    mut commands: Commands,
+    mut cooldown_timer_q: Query<(&mut Unit, Entity), Without<CooldownTimer>>,
+) {
+    for (mut unit, entity) in cooldown_timer_q.iter_mut() {
+        if !unit.cooling_down {
+            unit.cooling_down = true;
+
+            commands
+                .entity(entity)
+                .insert(CooldownTimer::new(unit.cooldown_timer));
+        }
+    }
+}
+
 pub fn spawn_unit(
     commands: &mut EntityCommands,
     asset_server: &AssetServer,
@@ -146,7 +161,7 @@ impl Unit {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
-    app.add_systems(Update, on_cooldown_timer_update);
+    app.add_systems(Update, (on_cooldown_timer_update, add_cooldown_timer));
 
     arrow_tower::plugin(app);
     bonfire::plugin(app);

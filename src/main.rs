@@ -16,10 +16,10 @@ mod level;
 mod map;
 mod menus;
 mod player;
+mod product;
 mod screens;
 mod theme;
 mod unit;
-mod product;
 
 pub mod skill;
 
@@ -60,25 +60,25 @@ impl Plugin for AppPlugin {
         app.add_plugins((camera::PanCamPlugin::default(), MeshPickingPlugin));
 
         // Add other plugins.
-        app.add_plugins((
-            PhysicsPlugins::default(),
-            asset_tracking::plugin,
-            map::plugin,
-            skill::plugin,
-            bullet::plugin,
-            battle::plugin,
-            player::plugin,
-            enemy::plugin,
-            unit::plugin,
-            level::plugin,
-            audio::plugin,
-            #[cfg(feature = "dev")]
-            dev_tools::plugin,
-            menus::plugin,
-            screens::plugin,
-            theme::plugin,
-        ))
-        .insert_resource(Gravity(Vec2::ZERO));
+        app.add_plugins((PhysicsPlugins::default(), asset_tracking::plugin))
+            .add_plugins((
+                product::plugin,
+                map::plugin,
+                skill::plugin,
+                bullet::plugin,
+                battle::plugin,
+                player::plugin,
+                enemy::plugin,
+                unit::plugin,
+                level::plugin,
+                audio::plugin,
+                #[cfg(feature = "dev")]
+                dev_tools::plugin,
+                menus::plugin,
+                screens::plugin,
+                theme::plugin,
+            ))
+            .insert_resource(Gravity(Vec2::ZERO));
 
         // Order new `AppSystems` variants by adding them here:
         app.configure_sets(

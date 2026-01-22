@@ -1,11 +1,27 @@
 use bevy::{ecs::relationship::RelatedSpawnerCommands, prelude::*};
 
 use crate::{
+    common::SunlightProductProcessor,
     map::{MapData, MapItemData, MapState, spawn_map},
     player::Player,
+    product::ProductSystem,
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
 };
+
+#[derive(Debug, Resource)]
+pub struct Level {
+    pub product_system: ProductSystem,
+}
+
+impl Default for Level {
+    fn default() -> Self {
+        let mut product_system = ProductSystem::empty();
+        product_system.register_processor("sunlight", SunlightProductProcessor);
+
+        Level { product_system }
+    }
+}
 
 #[derive(Debug, Component)]
 pub struct UnitDataButton {
@@ -121,6 +137,7 @@ impl Default for UnitDataCollection {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitDataCollection>();
+    app.init_resource::<Level>();
 
     app.add_systems(
         Update,
