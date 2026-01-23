@@ -1,17 +1,47 @@
 use bevy::{ecs::relationship::RelatedSpawnerCommands, prelude::*};
 
 use crate::{
-    common::SunlightProductProcessor,
+    common::{Sunlight, SunlightProductProcessor},
     map::{MapData, MapItemData, MapState, spawn_map},
     player::Player,
-    product::ProductSystem,
+    product::{ProductMeta, ProductSystem},
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
 };
 
 #[derive(Debug, Resource)]
 pub struct Level {
-    pub product_system: ProductSystem,
+    sunlight: u32,
+    product_system: ProductSystem,
+}
+
+impl Level {
+    pub fn collect_product(&mut self, reader: &mut MessageReader<ProductMeta>) {
+        let mut sunlight = 0;
+
+        for product_meta in reader.read() {
+            if let Some(product) = self.product_system.create::<Sunlight>(product_meta) {
+                sunlight += product.0;
+            } else {
+                tracing::warn!(
+                    "No processor found for product: {:?}, skipping.",
+                    product_meta
+                );
+            }
+        }
+
+        if sunlight == 0 {
+            return;
+        }
+
+        self.sunlight += sunlight;
+
+        tracing::info!("Collected sunlight products: {:?}", sunlight);
+    }
+}
+
+fn collect_product(mut level: ResMut<Level>, mut reader: MessageReader<ProductMeta>) {
+    level.collect_product(&mut reader);
 }
 
 impl Default for Level {
@@ -19,7 +49,10 @@ impl Default for Level {
         let mut product_system = ProductSystem::empty();
         product_system.register_processor("sunlight", SunlightProductProcessor);
 
-        Level { product_system }
+        Level {
+            sunlight: 0,
+            product_system,
+        }
     }
 }
 
@@ -141,7 +174,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        unit_data_button_system.run_if(in_state(Screen::Gameplay)),
+        (unit_data_button_system, collect_product).run_if(in_state(Screen::Gameplay)),
     );
 }
 

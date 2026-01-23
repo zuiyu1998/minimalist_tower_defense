@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use bevy::{app::App, ecs::message::Message, platform::collections::HashMap};
+use bevy::{app::App, ecs::{message::Message, resource::Resource}, platform::collections::HashMap};
 use downcast_rs::{Downcast, impl_downcast};
 
 /// 产品元数据
@@ -38,7 +38,7 @@ impl<T: ProductProcessor> ErasedProductProcessor for T {
 
 impl_downcast!(ErasedProductProcessor);
 
-#[derive(Debug)]
+#[derive(Debug, Resource)]
 pub struct ProductSystem(HashMap<String, Box<dyn ErasedProductProcessor>>);
 
 impl ProductSystem {

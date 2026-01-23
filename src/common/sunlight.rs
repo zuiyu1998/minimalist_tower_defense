@@ -14,7 +14,7 @@ impl crate::product::ProductProcessor for SunlightProductProcessor {
     type Output = Sunlight;
 
     fn process(&self, product_meta: &ProductMeta) -> Option<Self::Output> {
-        if product_meta.name == "Sunlight" {
+        if product_meta.name == "sunlight" {
             Some(Sunlight(product_meta.value as u32))
         } else {
             None
