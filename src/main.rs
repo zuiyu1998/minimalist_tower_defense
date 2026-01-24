@@ -20,6 +20,7 @@ mod product;
 mod screens;
 mod theme;
 mod unit;
+mod consts;
 
 pub mod skill;
 

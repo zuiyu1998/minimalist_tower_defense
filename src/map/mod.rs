@@ -13,6 +13,7 @@ use bevy::prelude::*;
 
 use crate::{
     MainCamera,
+    consts::{MAP_LAYER, MAP_TILE_LAYER},
     map::lair::spawn_lair,
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
@@ -222,19 +223,33 @@ pub fn spawn_map(
 ) {
     let map = Map::default();
 
+    let image = asset_server.load("images/map/bg.png");
+
     let mut commands = command.spawn((
         Name::new("Map"),
-        Transform::default(),
         DespawnOnExit(Screen::Gameplay),
         Visibility::Visible,
         MapEnvironment::default(),
+        Sprite {
+            image: image,
+            custom_size: Some(Vec2::new(1920.0, 1080.0)),
+            ..default()
+        },
+        Transform {
+            translation: Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: MAP_LAYER,
+            },
+            ..default()
+        },
     ));
 
     for item in map_data.items.iter() {
         let item = item.clone();
         let position =
             get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size)
-                .extend(0.0);
+                .extend(MAP_TILE_LAYER);
 
         map.item_factory_container.spawn_map_item(
             &mut commands,
