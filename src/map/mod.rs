@@ -13,7 +13,9 @@ use bevy::prelude::*;
 
 use crate::{
     MainCamera,
-    consts::{MAP_LAYER, MAP_TILE_LAYER},
+    consts::{
+        MAP_ITEM_SELECTED_SIZE, MAP_LAYER, MAP_TIEM_SIZE, MAP_TILE_LAYER, MAP_TILE_SELECTED_LAYER,
+    },
     map::lair::spawn_lair,
     screens::Screen,
     unit::{UnitData, UnitFactoryContainer},
@@ -49,8 +51,6 @@ impl MapItemData {
 #[derive(Debug, Resource)]
 pub struct MapData {
     items: Vec<MapItemData>,
-    pub item_size: i32,
-    pub item_space_size: i32,
 }
 
 #[derive(Debug, Resource, Default)]
@@ -90,11 +90,7 @@ impl Default for MapData {
             ..default()
         });
 
-        MapData {
-            items,
-            item_size: 128,
-            item_space_size: 2,
-        }
+        MapData { items }
     }
 }
 
@@ -108,7 +104,6 @@ fn on_spawn_unit(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    map_data: Res<MapData>,
     map: Single<(Entity, &Map)>,
     map_positon: Single<&MapPosition>,
     mut map_state: ResMut<MapState>,
@@ -122,13 +117,7 @@ fn on_spawn_unit(
         map_item_data.x = map_positon.x;
         map_item_data.y = map_positon.y;
 
-        let position = get_item_position(
-            map_item_data.x,
-            map_item_data.y,
-            map_data.item_size,
-            map_data.item_space_size,
-        )
-        .extend(0.0);
+        let position = get_item_position(map_item_data.x, map_item_data.y).extend(0.0);
 
         let (map_entity, map) = map.into_inner();
 
@@ -151,7 +140,6 @@ fn update_map_position(
     mut map_position: Single<(&mut Transform, &mut MapPosition)>,
     mut cursor_moved_reader: MessageReader<CursorMoved>,
     camera: Single<(&Camera, &GlobalTransform), With<MainCamera>>,
-    map_data: Res<MapData>,
 ) {
     let mut event = None;
 
@@ -168,23 +156,13 @@ fn update_map_position(
     };
 
     let global_position = Vec2::new(
-        global_position.x + (map_data.item_size / 2) as f32,
-        global_position.y + (map_data.item_size / 2) as f32,
+        global_position.x + (MAP_TIEM_SIZE / 2.0) as f32,
+        global_position.y + (MAP_TIEM_SIZE / 2.0) as f32,
     );
 
-    let position_i = get_item_position_i(
-        global_position.x,
-        global_position.y,
-        map_data.item_size,
-        map_data.item_space_size,
-    );
+    let position_i = get_item_position_i(global_position.x, global_position.y);
 
-    let position = get_item_position(
-        position_i.x,
-        position_i.y,
-        map_data.item_size,
-        map_data.item_space_size,
-    );
+    let position = get_item_position(position_i.x, position_i.y);
 
     map_position.0.translation.x = position.x;
     map_position.0.translation.y = position.y;
@@ -193,21 +171,42 @@ fn update_map_position(
     map_position.1.y = position_i.y;
 }
 
-#[derive(Debug, Component, Default)]
+#[derive(Debug, Component)]
 pub struct Map {
     item_factory_container: MapItemFactoryContainer,
+    x: i32,
+    y: i32,
 }
 
-fn get_item_position_i(x: f32, y: f32, item_size: i32, item_space_size: i32) -> IVec2 {
-    let x = (x / (item_size + item_space_size) as f32).floor() as i32;
-    let y = (y / (item_size + item_space_size) as f32).floor() as i32;
+impl Default for Map {
+    fn default() -> Self {
+        Map {
+            item_factory_container: Default::default(),
+            x: 25,
+            y: 25,
+        }
+    }
+}
+
+impl Map {
+    pub fn get_map_size(&self) -> Vec2 {
+        let x = self.x as f32 * MAP_TIEM_SIZE;
+        let y = self.y as f32 * MAP_TIEM_SIZE;
+
+        Vec2 { x, y }
+    }
+}
+
+fn get_item_position_i(x: f32, y: f32) -> IVec2 {
+    let x = ((x - 1.0) / MAP_TIEM_SIZE).floor() as i32;
+    let y = (y / MAP_TIEM_SIZE).floor() as i32;
 
     IVec2 { x, y }
 }
 
-fn get_item_position(x: i32, y: i32, item_size: i32, item_space_size: i32) -> Vec2 {
-    let x = x * (item_size + item_space_size);
-    let y = y * (item_size + item_space_size);
+fn get_item_position(x: i32, y: i32) -> Vec2 {
+    let x = 1.0 + x as f32 * MAP_TIEM_SIZE;
+    let y = -1.0 + y as f32 * MAP_TIEM_SIZE;
 
     Vec2 {
         x: x as f32,
@@ -232,7 +231,12 @@ pub fn spawn_map(
         MapEnvironment::default(),
         Sprite {
             image: image,
-            custom_size: Some(Vec2::new(1920.0, 1080.0)),
+            custom_size: Some(map.get_map_size()),
+            image_mode: SpriteImageMode::Tiled {
+                tile_x: true,
+                tile_y: true,
+                stretch_value: 1.0,
+            },
             ..default()
         },
         Transform {
@@ -247,9 +251,7 @@ pub fn spawn_map(
 
     for item in map_data.items.iter() {
         let item = item.clone();
-        let position =
-            get_item_position(item.x, item.y, map_data.item_size, map_data.item_space_size)
-                .extend(MAP_TILE_LAYER);
+        let position = get_item_position(item.x, item.y).extend(MAP_TILE_LAYER);
 
         map.item_factory_container.spawn_map_item(
             &mut commands,
@@ -266,12 +268,12 @@ pub fn spawn_map(
         MapPosition::default(),
         Sprite {
             image,
-            custom_size: Some(Vec2::splat(128.0)),
+            custom_size: Some(Vec2::splat(MAP_ITEM_SELECTED_SIZE)),
             ..default()
         },
         Name::new("MapPosition"),
         Transform {
-            translation: Vec3::new(0.0, 0.0, 1.0),
+            translation: Vec3::new(0.0, 0.0, MAP_TILE_SELECTED_LAYER),
             ..default()
         },
     ));

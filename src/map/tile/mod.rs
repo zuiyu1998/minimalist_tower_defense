@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::consts::MAP_ITEM_CONTENT_SIZE;
+
 use super::MapItemData;
 
 #[derive(Debug, Component)]
@@ -17,7 +19,7 @@ pub fn spawn_hill_map_item(
         Hill,
         Sprite {
             image,
-            custom_size: Some(Vec2::splat(128.0)),
+            custom_size: Some(Vec2::splat(MAP_ITEM_CONTENT_SIZE)),
             ..default()
         },
         Transform {
