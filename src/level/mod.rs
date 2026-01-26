@@ -9,10 +9,81 @@ use crate::{
     unit::{UnitData, UnitFactoryContainer},
 };
 
+#[derive(Debug, Component)]
+pub struct SunlightText;
+
+#[derive(Debug, Default)]
+pub struct LevelCollection {
+    sunlight: u32,
+}
+
+pub fn update_level_collection_panel(
+    level: Res<Level>,
+    sunlight: Single<&mut Text, With<SunlightText>>,
+) {
+    let mut sunlight = sunlight.into_inner();
+
+    tracing::info!(
+        "Collected sunlight products: {:?}",
+        level.collection.sunlight
+    );
+
+    sunlight.0 = format!("{}", level.collection.sunlight);
+}
+
+pub fn spawn_level_collection_panel(commands: &mut Commands, level_collection: &LevelCollection) {
+    commands.spawn((
+        Node {
+            width: percent(100),
+            height: percent(100),
+            align_items: AlignItems::Start,
+            justify_content: JustifyContent::Start,
+            ..default()
+        },
+        ZIndex(1),
+        Name::new("LevelCollection"),
+        DespawnOnExit(Screen::Gameplay),
+        children![
+            (
+                Node {
+                    align_items: AlignItems::Start,
+                    justify_content: JustifyContent::Start,
+                    ..default()
+                },
+                children![
+                    Text::new("Sunlight: "),
+                    TextFont {
+                        font_size: 32.0,
+                        ..default()
+                    },
+                ],
+            ),
+            (
+                Node {
+                    align_items: AlignItems::Start,
+                    justify_content: JustifyContent::Start,
+                    ..default()
+                },
+                children![
+                    (
+                        Text::new(format!("{}", level_collection.sunlight)),
+                        SunlightText,
+                        Name::new("SunlightText"),
+                    ),
+                    TextFont {
+                        font_size: 32.0,
+                        ..default()
+                    },
+                ],
+            )
+        ],
+    ));
+}
+
 #[derive(Debug, Resource)]
 pub struct Level {
-    sunlight: u32,
     product_system: ProductSystem,
+    collection: LevelCollection,
 }
 
 impl Level {
@@ -34,14 +105,8 @@ impl Level {
             return;
         }
 
-        self.sunlight += sunlight;
-
-        tracing::info!("Collected sunlight products: {:?}", sunlight);
+        self.collection.sunlight += sunlight;
     }
-}
-
-fn collect_product(mut level: ResMut<Level>, mut reader: MessageReader<ProductMeta>) {
-    level.collect_product(&mut reader);
 }
 
 impl Default for Level {
@@ -50,10 +115,14 @@ impl Default for Level {
         product_system.register_processor("sunlight", SunlightProductProcessor);
 
         Level {
-            sunlight: 0,
             product_system,
+            collection: LevelCollection::default(),
         }
     }
+}
+
+fn collect_product(mut level: ResMut<Level>, mut reader: MessageReader<ProductMeta>) {
+    level.collect_product(&mut reader);
 }
 
 #[derive(Debug, Component)]
@@ -84,7 +153,7 @@ fn on_unit_data_button_over(_event: On<Pointer<Over>>, mut map_state: ResMut<Map
     map_state.enable = false;
 }
 
-fn button(
+fn unit_data_button(
     commands: &mut RelatedSpawnerCommands<ChildOf>,
     asset_server: &AssetServer,
     unit_data: &UnitData,
@@ -132,6 +201,7 @@ pub fn spawn_unit_data_collection_panel(
             },
             Name::new("UnitDataCollectionPanel"),
             DespawnOnExit(Screen::Gameplay),
+            ZIndex(10),
         ))
         .with_children(|parent| {
             parent
@@ -144,7 +214,7 @@ pub fn spawn_unit_data_collection_panel(
                 },))
                 .with_children(|parent| {
                     for data in collection.items.iter() {
-                        button(parent, asset_server, data);
+                        unit_data_button(parent, asset_server, data);
                     }
                 });
         });
@@ -174,7 +244,12 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (unit_data_button_system, collect_product).run_if(in_state(Screen::Gameplay)),
+        (
+            unit_data_button_system,
+            collect_product,
+            update_level_collection_panel,
+        )
+            .run_if(in_state(Screen::Gameplay)),
     );
 }
 
@@ -184,6 +259,7 @@ pub fn spawn_level(
     map_data: Res<MapData>,
     unit_factory_container: Res<UnitFactoryContainer>,
     collection: Res<UnitDataCollection>,
+    level: Res<Level>,
 ) {
     commands.spawn(Player);
 
@@ -195,4 +271,6 @@ pub fn spawn_level(
     );
 
     spawn_unit_data_collection_panel(&mut commands, &asset_server, &collection);
+
+    spawn_level_collection_panel(&mut commands, &level.collection);
 }
