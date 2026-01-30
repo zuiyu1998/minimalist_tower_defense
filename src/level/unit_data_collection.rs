@@ -11,7 +11,23 @@ use crate::{
 #[derive(Debug, Component)]
 pub struct UsedCooldownTimer(Timer);
 
-fn used_cooldown_timer_system(
+#[derive(Debug, Component)]
+pub struct UsedCooldownTimerText(Entity);
+
+fn update_used_cooldown_timer_text_system(
+    mut text_q: Query<(&mut Text, &UsedCooldownTimerText)>,
+    used_cooldown_timer_q: Query<&UsedCooldownTimer>,
+) {
+    for (mut text, target) in text_q.iter_mut() {
+        if let Ok(timer) = used_cooldown_timer_q.get(target.0) {
+            text.0 = format!("{:.1}", timer.0.remaining().as_secs_f32())
+        } else {
+            text.0 = format!("0");
+        }
+    }
+}
+
+fn update_used_cooldown_timer_system(
     mut commands: Commands,
     mut used_cooldown_timer_q: Query<(&mut UsedCooldownTimer, &mut UnitDataButton, Entity)>,
     time: Res<Time>,
@@ -83,7 +99,6 @@ fn unit_data_button(
                 height: px(64),
                 ..default()
             },
-            image,
             Button,
             UnitDataButton {
                 unit_data: unit_data.clone(),
@@ -92,12 +107,30 @@ fn unit_data_button(
             UsedCooldownTimer::new(10),
         ))
         .with_children(|parent| {
-            parent
-                .spawn(Node {
+            let entity = parent.target_entity();
+
+            parent.spawn((
+                Node {
                     width: px(64),
                     height: px(64),
+                    position_type: PositionType::Absolute,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
                     ..default()
-                })
+                },
+                children![(Text::new("0"), UsedCooldownTimerText(entity)),],
+            ));
+
+            parent
+                .spawn((
+                    Node {
+                        width: px(64),
+                        height: px(64),
+                        position_type: PositionType::Absolute,
+                        ..default()
+                    },
+                    image,
+                ))
                 .observe(on_unit_data_button_out)
                 .observe(on_unit_data_button_over);
         });
@@ -161,6 +194,10 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (unit_data_button_system, used_cooldown_timer_system),
+        (
+            unit_data_button_system,
+            update_used_cooldown_timer_system,
+            update_used_cooldown_timer_text_system,
+        ),
     );
 }
