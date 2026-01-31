@@ -12,6 +12,9 @@ use crate::{
 pub struct UsedCooldownTimer(Timer);
 
 #[derive(Debug, Component)]
+pub struct UsedCooldownTimerNode(Entity);
+
+#[derive(Debug, Component)]
 pub struct UsedCooldownTimerText(Entity);
 
 fn update_used_cooldown_timer_text_system(
@@ -23,6 +26,21 @@ fn update_used_cooldown_timer_text_system(
             text.0 = format!("{:.1}", timer.0.remaining().as_secs_f32())
         } else {
             text.0 = format!("0");
+        }
+    }
+}
+
+fn update_used_cooldown_timer_node_system(
+    mut node_q: Query<(&mut Visibility, &UsedCooldownTimerNode)>,
+    used_data_button_q: Query<&UnitDataButton>,
+) {
+    for (mut visibility, target) in node_q.iter_mut() {
+        if let Ok(used_data_button) = used_data_button_q.get(target.0) {
+            if used_data_button.disabled {
+                *visibility = Visibility::Visible;
+            } else {
+                *visibility = Visibility::Hidden;
+            }
         }
     }
 }
@@ -110,6 +128,8 @@ fn unit_data_button(
             let entity = parent.target_entity();
 
             parent.spawn((
+                UsedCooldownTimerNode(entity),
+                Visibility::Hidden,
                 Node {
                     width: px(64),
                     height: px(64),
@@ -198,6 +218,7 @@ pub(super) fn plugin(app: &mut App) {
             unit_data_button_system,
             update_used_cooldown_timer_system,
             update_used_cooldown_timer_text_system,
+            update_used_cooldown_timer_node_system,
         ),
     );
 }
