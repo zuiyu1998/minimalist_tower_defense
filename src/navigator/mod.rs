@@ -1,6 +1,43 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
-use vleue_navigator::VleueNavigatorPlugin;
+use vleue_navigator::{
+    Triangulation, VleueNavigatorPlugin,
+    prelude::{NavMeshSettings, NavMeshUpdateMode, NavmeshUpdaterPlugin},
+};
+
+#[derive(Component)]
+pub enum Obstacle {
+    Wall,
+}
+
+#[derive(Component, Default)]
+pub struct NavigatorPath {
+    pub current: Vec3,
+    pub next: Vec<Vec3>,
+}
+
+pub fn spawn_nav_mesh(commands: &mut Commands) {
+    commands.spawn((
+        NavMeshSettings {
+            // Define the outer borders of the navmesh.
+            fixed: Triangulation::from_outer_edges(&[
+                vec2(-500.0, -500.0),
+                vec2(500.0, -500.0),
+                vec2(500.0, 500.0),
+                vec2(-500.0, 500.0),
+            ]),
+            agent_radius: 5.0,
+            simplify: 4.0,
+            merge_steps: 1,
+            ..default()
+        },
+        NavMeshUpdateMode::Direct,
+    ));
+}
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(VleueNavigatorPlugin);
+    app.add_plugins((
+        VleueNavigatorPlugin,
+        NavmeshUpdaterPlugin::<Collider, Obstacle>::default(),
+    ));
 }

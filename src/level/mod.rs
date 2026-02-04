@@ -5,12 +5,7 @@ pub use unit_data_collection::*;
 use bevy::prelude::*;
 
 use crate::{
-    common::{Sunlight, SunlightProductProcessor},
-    map::{MapData, spawn_map},
-    player::Player,
-    product::{ProductMeta, ProductSystem},
-    screens::Screen,
-    unit::UnitFactoryContainer,
+    common::{Sunlight, SunlightProductProcessor}, map::{MapData, spawn_map}, navigator::spawn_nav_mesh, player::Player, product::{ProductMeta, ProductSystem}, screens::Screen, unit::UnitFactoryContainer
 };
 
 #[derive(Debug, Component)]
@@ -155,6 +150,8 @@ pub fn spawn_level(
         &map_data,
         &unit_factory_container,
     );
+
+    spawn_nav_mesh(&mut commands);
 
     spawn_unit_data_collection_panel(&mut commands, &asset_server, &collection);
 

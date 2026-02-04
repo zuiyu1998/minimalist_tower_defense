@@ -81,6 +81,15 @@ impl Default for MapData {
             });
         }
 
+        for i in -2..2 {
+            items.push(MapItemData {
+                name: "hill".to_string(),
+                x: 2,
+                y: i,
+                ..default()
+            });
+        }
+
         items.push(MapItemData {
             name: "unit".to_string(),
             unit_item_name: "bonfire".to_string(),
@@ -279,8 +288,10 @@ pub fn spawn_map(
     ));
 
     let lair = {
+        let position = get_item_position(10, -10).extend(MAP_TILE_LAYER);
+
         let mut commands = commands.commands();
-        spawn_lair(&mut commands)
+        spawn_lair(&mut commands, position)
     };
 
     commands.add_child(lair);

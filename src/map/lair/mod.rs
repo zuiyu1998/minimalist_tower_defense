@@ -27,6 +27,7 @@ pub trait LairTrait: 'static + Send + Sync {
 pub struct SquareLarir {
     timer: Timer,
     enemy_spawner_container: EnemySpawnerContainer,
+    enabled: bool,
 }
 
 impl SquareLarir {
@@ -43,6 +44,7 @@ impl SquareLarir {
         SquareLarir {
             timer: Timer::from_seconds(1.0, TimerMode::Repeating),
             enemy_spawner_container: EnemySpawnerContainer::empty(),
+            enabled: true,
         }
     }
 }
@@ -83,7 +85,8 @@ fn larir_process(
     for (mut lair, transorm) in lair_q.iter_mut() {
         lair.timer.tick(time.delta());
 
-        if lair.timer.just_finished() {
+        if lair.timer.just_finished() && lair.enabled {
+            lair.enabled = false;
             lair.spaw_enemy(
                 &mut commands,
                 &asset_server,
@@ -106,13 +109,16 @@ impl<T: LairTrait> Plugin for LairPlugin<T> {
     }
 }
 
-pub fn spawn_lair(commands: &mut Commands) -> Entity {
+pub fn spawn_lair(commands: &mut Commands, position: Vec3) -> Entity {
     commands
         .spawn((
             SquareLarir::default(),
             Lair,
             Name::new("Lair"),
-            Transform { ..default() },
+            Transform {
+                translation: position,
+                ..default()
+            },
         ))
         .id()
 }

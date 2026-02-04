@@ -1,6 +1,7 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::consts::MAP_ITEM_CONTENT_SIZE;
+use crate::{common::GameLayer, consts::MAP_ITEM_CONTENT_SIZE, navigator::Obstacle};
 
 use super::MapItemData;
 
@@ -26,5 +27,10 @@ pub fn spawn_hill_map_item(
             translation: position,
             ..default()
         },
+        Obstacle::Wall,
+        RigidBody::Static,
+        Collider::rectangle(MAP_ITEM_CONTENT_SIZE, MAP_ITEM_CONTENT_SIZE),
+        GameLayer::default_layers(),
+        Name::new("Hill")
     ));
 }
