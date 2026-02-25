@@ -86,7 +86,6 @@ fn larir_process(
         lair.timer.tick(time.delta());
 
         if lair.timer.just_finished() && lair.enabled {
-            lair.enabled = false;
             lair.spaw_enemy(
                 &mut commands,
                 &asset_server,

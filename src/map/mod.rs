@@ -287,8 +287,17 @@ pub fn spawn_map(
         },
     ));
 
+    spawn_lair_(&mut commands, 10, -10);
+    spawn_lair_(&mut commands, -10, -10);
+    spawn_lair_(&mut commands, -10, 10);
+    spawn_lair_(&mut commands, 10, 10);
+
+    commands.insert(map);
+}
+
+fn spawn_lair_(commands: &mut EntityCommands, x: i32, y: i32) {
     let lair = {
-        let position = get_item_position(10, -10).extend(MAP_TILE_LAYER);
+        let position = get_item_position(x, y).extend(MAP_TILE_LAYER);
 
         let mut commands = commands.commands();
         spawn_lair(&mut commands, position)
@@ -296,7 +305,7 @@ pub fn spawn_map(
 
     commands.add_child(lair);
 
-    commands.insert(map);
+    commands.add_child(lair);
 }
 
 pub(super) fn plugin(app: &mut App) {

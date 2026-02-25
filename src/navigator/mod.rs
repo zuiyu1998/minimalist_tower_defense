@@ -5,6 +5,8 @@ use vleue_navigator::{
     prelude::{NavMeshSettings, NavMeshUpdateMode, NavmeshUpdaterPlugin},
 };
 
+use crate::consts::MAP_TIEM_SIZE;
+
 #[derive(Component)]
 pub enum Obstacle {
     Wall,
@@ -26,8 +28,8 @@ pub fn spawn_nav_mesh(commands: &mut Commands) {
                 vec2(500.0, 500.0),
                 vec2(-500.0, 500.0),
             ]),
-            agent_radius: 5.0,
-            simplify: 4.0,
+            agent_radius: MAP_TIEM_SIZE / 2.0,
+            simplify: 10.0,
             merge_steps: 1,
             ..default()
         },

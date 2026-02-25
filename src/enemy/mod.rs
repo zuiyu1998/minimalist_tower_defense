@@ -1,12 +1,72 @@
 use std::fmt::Debug;
 
 use crate::{
-    common::{GameLayer, LightSource, Stas, spawn_hurt},
+    common::{GameLayer, Hitbox, LightSource, Stas, spawn_hit, spawn_hurt},
     navigator::NavigatorPath,
 };
 use avian2d::prelude::*;
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::{
+    ecs::system::SystemParam,
+    platform::collections::{HashMap, HashSet},
+    prelude::*,
+};
 use vleue_navigator::{NavMesh, prelude::ManagedNavMesh};
+
+#[derive(SystemParam)]
+pub struct EnemyAttackSystemParam<'w, 's> {
+    commands: Commands<'w, 's>,
+    enemy_q: Query<'w, 's, (&'static Enemy, Entity)>,
+    stats_q: Query<'w, 's, &'static mut Stas, Without<Enemy>>,
+    hitbox_q: Query<'w, 's, &'static Hitbox>,
+}
+
+impl EnemyAttackSystemParam<'_, '_> {
+    fn apply(&mut self, enemy_entity: Entity, stats_entity: Entity, die_set: &mut HashSet<Entity>) {
+        if let Ok((_enemy, _entity)) = self.enemy_q.get(enemy_entity) {
+            tracing::info!("enemy attack start");
+
+            if let Ok(mut stats) = self.stats_q.get_mut(stats_entity) {
+                stats.update_health(-5);
+                if stats.is_die() {
+                    die_set.insert(stats_entity);
+                }
+            }
+        }
+    }
+    fn handle_collision_start(&self, event: &CollisionStart) -> Option<(Entity, Entity)> {
+        if event.body1.is_none() || event.body2.is_none() {
+            return None;
+        }
+
+        if self.hitbox_q.contains(event.collider1) && self.enemy_q.contains(event.body1.unwrap()) {
+            return Some((event.body1.unwrap(), event.body2.unwrap()));
+        }
+
+        if self.hitbox_q.contains(event.collider2) && self.enemy_q.contains(event.body2.unwrap()) {
+            return Some((event.body2.unwrap(), event.body1.unwrap()));
+        }
+
+        return None;
+    }
+}
+
+//敌人攻击玩家
+fn on_enemy_attack(
+    mut collision_reader: MessageReader<CollisionStart>,
+    mut param: EnemyAttackSystemParam,
+) {
+    let mut die_set = HashSet::new();
+
+    for event in collision_reader.read() {
+        if let Some((body1, body2)) = param.handle_collision_start(event) {
+            param.apply(body1, body2, &mut die_set);
+        }
+    }
+
+    for entity in die_set.iter() {
+        param.commands.entity(*entity).despawn();
+    }
+}
 
 #[derive(Debug)]
 pub struct EnemySpawnerContainer(HashMap<String, Box<dyn EnemySpawner>>);
@@ -102,8 +162,14 @@ impl EnemySpawner for SquareEnemySpawner {
 
         spawn_hurt(
             &mut entity_commands,
-            collider,
+            collider.clone(),
             GameLayer::enemy_hurtbox_layers(),
+        );
+
+        spawn_hit(
+            &mut entity_commands,
+            collider,
+            GameLayer::enemy_hitbox_layers(),
         );
 
         commands.entity(parent).add_child(enemy);
@@ -174,4 +240,6 @@ pub fn move_enemy(
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, (find_navigator_path, move_enemy));
+
+    app.add_systems(Update, on_enemy_attack);
 }

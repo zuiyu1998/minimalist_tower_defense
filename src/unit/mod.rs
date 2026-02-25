@@ -6,7 +6,10 @@ pub use bonfire::*;
 
 use std::{fmt::Debug, time::Duration};
 
-use crate::{common::GameLayer, skill::Skill};
+use crate::{
+    common::{GameLayer, Stas, spawn_hurt},
+    skill::Skill,
+};
 use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
@@ -135,6 +138,7 @@ impl Unit {
         let unit_layers = GameLayer::unit_layers();
 
         let mut commands = commands.commands();
+        let collider = Collider::rectangle(100.0, 100.0);
 
         let mut entity_commands = commands.spawn((
             self.clone(),
@@ -148,12 +152,19 @@ impl Unit {
                 ..default()
             },
             RigidBody::Static,
-            Collider::rectangle(100.0, 100.0),
+            collider.clone(),
             unit_layers,
             EnemyTargets::default(),
             CooldownTimer::new(self.cooldown_timer),
             Skill {},
+            Stas::default(),
         ));
+
+        spawn_hurt(
+            &mut entity_commands,
+            collider,
+            GameLayer::unit_hurtbox_layers(),
+        );
 
         factory.spawn(data, &mut entity_commands);
     }

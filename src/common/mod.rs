@@ -17,8 +17,10 @@ pub enum GameLayer {
     Default, // Layer 0 - the default layer that objects are assigned to
     Unit,         // Layer 1
     Enemy,        // Layer 2
-    UnitHitbox,   // Layer 3 攻击框
-    EnemyHurtbox, // Layer 4 受击框
+    UnitHitbox,   // Layer 3 塔攻击框
+    EnemyHurtbox, // Layer 4 敌人受击框
+    EnemyHitbox,  // Layer 5 敌人攻击框
+    UnitHurtbox,  // Layer 5 塔受击框
 }
 
 // 光源
@@ -51,8 +53,16 @@ impl GameLayer {
         CollisionLayers::new(GameLayer::Unit, [GameLayer::Enemy])
     }
 
+    pub fn unit_hurtbox_layers() -> CollisionLayers {
+        CollisionLayers::new(GameLayer::UnitHurtbox, [GameLayer::EnemyHitbox])
+    }
+
     pub fn unit_hitbox_layers() -> CollisionLayers {
         CollisionLayers::new(GameLayer::UnitHitbox, [GameLayer::EnemyHurtbox])
+    }
+
+    pub fn enemy_hitbox_layers() -> CollisionLayers {
+        CollisionLayers::new(GameLayer::EnemyHitbox, [GameLayer::UnitHurtbox])
     }
 
     pub fn enemy_hurtbox_layers() -> CollisionLayers {
