@@ -3703,6 +3703,7 @@ dependencies = [
  "downcast-rs 2.0.2",
  "getrandom 0.3.4",
  "rand 0.9.2",
+ "seldom_state",
  "tracing",
  "vleue_navigator",
 ]
@@ -5133,6 +5134,21 @@ dependencies = [
  "memmap2",
  "smithay-client-toolkit",
  "tiny-skia",
+]
+
+[[package]]
+name = "seldom_state"
+version = "0.15.0"
+source = "git+https://github.com/zuiyu1998/seldom_state.git?branch=main#052c6e5ee0ad86ee9948913da63117c167498a7b"
+dependencies = [
+ "bevy_app",
+ "bevy_derive",
+ "bevy_ecs",
+ "bevy_log",
+ "bevy_math",
+ "bevy_utils",
+ "either",
+ "variadics_please",
 ]
 
 [[package]]

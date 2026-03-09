@@ -10,7 +10,13 @@ Check out the [documentation](https://github.com/TheBevyFlock/bevy_new_2d/blob/m
 
 # 功能
 
--   [ ] 单位
--   [ ] 敌人
--   [ ] 地图
--   [ ] 关卡
+- [ ] 单位
+    - [x] 篝火
+- [ ] 敌人
+- [ ] 地图
+- [ ] 关卡
+
+# 依赖
+
+- bevy,游戏引擎
+- seldom_state，状态机插件
