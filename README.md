@@ -19,4 +19,3 @@ Check out the [documentation](https://github.com/TheBevyFlock/bevy_new_2d/blob/m
 # 依赖
 
 - bevy,游戏引擎
-- seldom_state，状态机插件

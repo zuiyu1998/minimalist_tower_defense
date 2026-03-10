@@ -22,7 +22,7 @@ pub fn update_level_collection_panel(
 ) {
     let mut sunlight = sunlight.into_inner();
 
-    tracing::info!(
+    tracing::debug!(
         "Collected sunlight products: {:?}",
         level.collection.sunlight
     );

@@ -14,36 +14,26 @@ use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
 //更新技能冷却
-fn on_cooldown_timer_update(
-    mut commands: Commands,
-    mut cooldown_timer_q: Query<(&mut CooldownTimer, &mut Unit, Entity)>,
-    time: Res<Time>,
-) {
-    for (mut cooldown_timer, mut unit, entity) in cooldown_timer_q.iter_mut() {
+fn on_cooldown_timer_update(mut cooldown_timer_q: Query<(&mut CooldownTimer,)>, time: Res<Time>) {
+    for (mut cooldown_timer,) in cooldown_timer_q.iter_mut() {
         cooldown_timer.0.tick(time.delta());
-
-        if cooldown_timer.0.just_finished() {
-            unit.cooling_down = false;
-
-            commands.entity(entity).remove::<CooldownTimer>();
-        }
     }
 }
 
-fn add_cooldown_timer(
-    mut commands: Commands,
-    mut cooldown_timer_q: Query<(&mut Unit, Entity), Without<CooldownTimer>>,
-) {
-    for (mut unit, entity) in cooldown_timer_q.iter_mut() {
-        if !unit.cooling_down {
-            unit.cooling_down = true;
+// fn add_cooldown_timer(
+//     mut commands: Commands,
+//     mut cooldown_timer_q: Query<(&mut Unit, Entity), Without<CooldownTimer>>,
+// ) {
+//     for (mut unit, entity) in cooldown_timer_q.iter_mut() {
+//         if !unit.cooling_down {
+//             unit.cooling_down = true;
 
-            commands
-                .entity(entity)
-                .insert(CooldownTimer::new(unit.cooldown_timer));
-        }
-    }
-}
+//             commands
+//                 .entity(entity)
+//                 .insert(CooldownTimer::new(unit.cooldown_timer));
+//         }
+//     }
+// }
 
 pub fn spawn_unit(
     commands: &mut EntityCommands,
@@ -107,7 +97,7 @@ pub struct CooldownTimer(Timer);
 
 impl CooldownTimer {
     pub fn new(secs: u64) -> Self {
-        CooldownTimer(Timer::new(Duration::from_secs(secs), TimerMode::Once))
+        CooldownTimer(Timer::new(Duration::from_secs(secs), TimerMode::Repeating))
     }
 }
 
@@ -172,7 +162,7 @@ impl Unit {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
-    app.add_systems(Update, (on_cooldown_timer_update, add_cooldown_timer));
+    app.add_systems(Update, (on_cooldown_timer_update,));
 
     arrow_tower::plugin(app);
     bonfire::plugin(app);

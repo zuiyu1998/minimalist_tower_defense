@@ -19,7 +19,6 @@ avian2d = "0.5.0"
 downcast-rs = { version = "2" }
 bevy-inspector-egui = { version = "0.36.0", optional = true }
 vleue_navigator = { version = "0.15", features = ["avian2d"] }
-seldom_state = { git = "https://github.com/zuiyu1998/seldom_state.git", branch = "main"}
 
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
