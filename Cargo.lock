@@ -1535,6 +1535,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_state_chart"
+version = "0.1.0"
+source = "git+https://github.com/zuiyu1998/bevy_state_chart.git#2101228655252534f647d753acf3f887a8a8e09b"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_state_macros"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3700,6 +3708,7 @@ dependencies = [
  "avian2d",
  "bevy",
  "bevy-inspector-egui",
+ "bevy_state_chart",
  "downcast-rs 2.0.2",
  "getrandom 0.3.4",
  "rand 0.9.2",

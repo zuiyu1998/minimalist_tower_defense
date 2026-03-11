@@ -6,6 +6,8 @@ use crate::{
     unit::{CooldownTimer, Unit, UnitFactory},
 };
 
+use bevy_state_chart::{StateChart, StateChartPlugin, StateChartSets};
+
 #[derive(Debug, Component)]
 #[component(storage = "SparseSet")]
 pub struct IdleState;
@@ -14,23 +16,17 @@ pub struct IdleState;
 #[component(storage = "SparseSet")]
 pub struct EnableState;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum StateChartEvent {
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum BonfireStateEvent {
     Enable,
-}
-
-#[derive(Debug, Component)]
-#[component(storage = "SparseSet")]
-pub struct StateChart {
-    events: Vec<StateChartEvent>,
 }
 
 fn idle_2_enable_on_enable_event(
     mut commands: Commands,
-    idle_q: Query<(Entity, &StateChart), With<IdleState>>,
+    idle_q: Query<(Entity, &StateChart<BonfireStateEvent>), With<IdleState>>,
 ) {
     for (entity, chart) in idle_q.iter() {
-        if chart.events.contains(&StateChartEvent::Enable) {
+        if chart.events().contains(&BonfireStateEvent::Enable) {
             commands
                 .entity(entity)
                 .remove::<IdleState>()
@@ -82,26 +78,29 @@ pub struct BonfireFactory;
 
 impl UnitFactory for BonfireFactory {
     fn spawn(&self, _data: &super::UnitData, commands: &mut EntityCommands) {
+        let mut state_chart = StateChart::<BonfireStateEvent>::default();
+        state_chart.send_event(BonfireStateEvent::Enable);
+
         commands.insert((
             Bonfire::default(),
             LightSource,
             Name::new("Bonfire"),
             IdleState,
-            StateChart {
-                events: vec![StateChartEvent::Enable],
-            },
+            state_chart,
         ));
     }
 }
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins(StateChartPlugin::<BonfireStateEvent>::default());
+
     app.add_systems(
         FixedUpdate,
-        (
-            on_cooldown_timer_finished,
-            idle_2_enable_on_enable_event,
-            on_enable_enter,
-        )
-            .chain(),
+        idle_2_enable_on_enable_event.in_set(StateChartSets::StateTransition),
+    );
+
+    app.add_systems(
+        FixedUpdate,
+        (on_enable_enter, on_cooldown_timer_finished).in_set(StateChartSets::Action),
     );
 }
