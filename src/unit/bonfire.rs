@@ -3,18 +3,10 @@ use bevy::prelude::*;
 use crate::{
     common::LightSource,
     product::ProductMeta,
-    unit::{CooldownTimer, Unit, UnitFactory},
+    unit::{CooldownTimer, EnableState, IdleState, Unit, UnitFactory},
 };
 
 use bevy_state_chart::{StateChart, StateChartPlugin, StateChartSets};
-
-#[derive(Debug, Component)]
-#[component(storage = "SparseSet")]
-pub struct IdleState;
-
-#[derive(Debug, Component)]
-#[component(storage = "SparseSet")]
-pub struct EnableState;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BonfireStateEvent {
@@ -23,7 +15,7 @@ pub enum BonfireStateEvent {
 
 fn idle_2_enable_on_enable_event(
     mut commands: Commands,
-    idle_q: Query<(Entity, &StateChart<BonfireStateEvent>), With<IdleState>>,
+    idle_q: Query<(Entity, &StateChart<BonfireStateEvent>), (With<IdleState>, With<Bonfire>)>,
 ) {
     for (entity, chart) in idle_q.iter() {
         if chart.events().contains(&BonfireStateEvent::Enable) {
@@ -35,7 +27,10 @@ fn idle_2_enable_on_enable_event(
     }
 }
 
-fn on_enable_enter(mut commands: Commands, enable_q: Query<(Entity, &Unit), Added<EnableState>>) {
+fn on_enable_enter(
+    mut commands: Commands,
+    enable_q: Query<(Entity, &Unit), (Added<EnableState>, With<Bonfire>)>,
+) {
     for (entity, unit) in enable_q.iter() {
         commands
             .entity(entity)
@@ -44,7 +39,10 @@ fn on_enable_enter(mut commands: Commands, enable_q: Query<(Entity, &Unit), Adde
 }
 
 fn on_cooldown_timer_finished(
-    mut cooldown_timer_q: Query<(&mut CooldownTimer, &Bonfire, &mut Unit), With<EnableState>>,
+    mut cooldown_timer_q: Query<
+        (&mut CooldownTimer, &Bonfire, &mut Unit),
+        (With<EnableState>, With<Bonfire>),
+    >,
     mut writer: MessageWriter<ProductMeta>,
 ) {
     for (mut cooldown_timer, bonfire, mut _unit) in cooldown_timer_q.iter_mut() {

@@ -13,27 +13,20 @@ use crate::{
 use avian2d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
 
+#[derive(Debug, Component)]
+#[component(storage = "SparseSet")]
+pub struct IdleState;
+
+#[derive(Debug, Component)]
+#[component(storage = "SparseSet")]
+pub struct EnableState;
+
 //更新技能冷却
 fn on_cooldown_timer_update(mut cooldown_timer_q: Query<(&mut CooldownTimer,)>, time: Res<Time>) {
     for (mut cooldown_timer,) in cooldown_timer_q.iter_mut() {
         cooldown_timer.0.tick(time.delta());
     }
 }
-
-// fn add_cooldown_timer(
-//     mut commands: Commands,
-//     mut cooldown_timer_q: Query<(&mut Unit, Entity), Without<CooldownTimer>>,
-// ) {
-//     for (mut unit, entity) in cooldown_timer_q.iter_mut() {
-//         if !unit.cooling_down {
-//             unit.cooling_down = true;
-
-//             commands
-//                 .entity(entity)
-//                 .insert(CooldownTimer::new(unit.cooldown_timer));
-//         }
-//     }
-// }
 
 pub fn spawn_unit(
     commands: &mut EntityCommands,
