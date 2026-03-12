@@ -288,9 +288,6 @@ pub fn spawn_map(
     ));
 
     spawn_lair_(&mut commands, 10, -10);
-    spawn_lair_(&mut commands, -10, -10);
-    spawn_lair_(&mut commands, -10, 10);
-    spawn_lair_(&mut commands, 10, 10);
 
     commands.insert(map);
 }

@@ -67,7 +67,8 @@ impl Plugin for AppPlugin {
             PhysicsPlugins::default().with_length_unit(100.0),
             asset_tracking::plugin,
             navigator::plugin,
-            StateChartConfigPlugin
+            StateChartConfigPlugin,
+            common::plugin
         ))
         .add_plugins((
             product::plugin,

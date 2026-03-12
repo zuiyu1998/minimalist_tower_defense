@@ -1,12 +1,11 @@
-use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
     battle::{self, BulletContext},
-    common::{AttackDistance, GameLayer, spawn_attack_distance},
+    common::{EnemyTargets, GameLayer, spawn_attack_distance},
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
-    unit::{CooldownTimer, EnemyTargets, Unit, UnitData, UnitFactory},
+    unit::{CooldownTimer, Unit, UnitData, UnitFactory},
 };
 
 #[derive(Debug)]
@@ -93,25 +92,7 @@ fn process(
     }
 }
 
-//获取敌人信息
-fn find_enemy(
-    mut collision_reader: MessageReader<CollisionStart>,
-    attack_distance_q: Query<&ChildOf, With<AttackDistance>>,
-    mut enemy_targets_q: Query<&mut EnemyTargets>,
-) {
-    for event in collision_reader.read() {
-        if attack_distance_q.contains(event.collider1) {
-            if let Some(enemy) = event.body2 {
-                let attack_distance = attack_distance_q.get(event.collider1).unwrap();
-                let mut enemy_targets = enemy_targets_q.get_mut(attack_distance.0).unwrap();
-
-                enemy_targets.0.push(enemy);
-            }
-        }
-    }
-}
-
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, (check_enemy_targets, find_enemy).chain());
+    app.add_systems(Update, (check_enemy_targets,).chain());
     app.add_systems(FixedUpdate, (process,).chain());
 }

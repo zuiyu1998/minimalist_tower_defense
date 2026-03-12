@@ -69,3 +69,7 @@ impl GameLayer {
         CollisionLayers::new(GameLayer::EnemyHurtbox, [GameLayer::UnitHitbox])
     }
 }
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_plugins(attack_distance::plugin);
+}

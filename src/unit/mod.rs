@@ -7,7 +7,7 @@ pub use bonfire::*;
 use std::{fmt::Debug, time::Duration};
 
 use crate::{
-    common::{GameLayer, Stas, spawn_hurt},
+    common::{EnemyTargets, GameLayer, Stas, spawn_hurt},
     skill::Skill,
 };
 use avian2d::prelude::*;
@@ -82,8 +82,7 @@ pub trait UnitFactory: 'static + Send + Sync + Debug {
     fn spawn(&self, data: &UnitData, entity_commands: &mut EntityCommands);
 }
 
-#[derive(Debug, Component, Default)]
-pub struct EnemyTargets(Vec<Entity>);
+
 
 #[derive(Debug, Component)]
 pub struct CooldownTimer(Timer);
