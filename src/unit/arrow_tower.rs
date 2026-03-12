@@ -29,24 +29,6 @@ impl UnitFactory for ArrowTowerFactory {
 #[derive(Debug, Component)]
 pub struct ArrowTower;
 
-//检测敌人是否存在
-fn check_enemy_targets(
-    mut enemy_targets_q: Query<&mut EnemyTargets, With<ArrowTower>>,
-    enemy_q: Query<Entity, With<Enemy>>,
-) {
-    for mut enemy_targets in enemy_targets_q.iter_mut() {
-        let mut new_enemy_targets = vec![];
-
-        for enemy_target in enemy_targets.0.iter() {
-            if let Ok(entity) = enemy_q.get(*enemy_target) {
-                new_enemy_targets.push(entity);
-            }
-        }
-
-        enemy_targets.0 = new_enemy_targets;
-    }
-}
-
 //更新
 fn process(
     mut commands: Commands,
@@ -93,6 +75,5 @@ fn process(
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, (check_enemy_targets,).chain());
     app.add_systems(FixedUpdate, (process,).chain());
 }
