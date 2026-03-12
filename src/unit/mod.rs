@@ -82,8 +82,6 @@ pub trait UnitFactory: 'static + Send + Sync + Debug {
     fn spawn(&self, data: &UnitData, entity_commands: &mut EntityCommands);
 }
 
-
-
 #[derive(Debug, Component)]
 pub struct CooldownTimer(Timer);
 
@@ -95,16 +93,12 @@ impl CooldownTimer {
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct Unit {
-    cooling_down: bool,
     cooldown_timer: u64,
 }
 
 impl Unit {
     pub fn from_data(_data: &UnitData) -> Self {
-        Unit {
-            cooling_down: false,
-            cooldown_timer: 1,
-        }
+        Unit { cooldown_timer: 1 }
     }
 
     pub fn spawn_unit(
