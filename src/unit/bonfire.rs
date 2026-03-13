@@ -1,12 +1,10 @@
 use bevy::prelude::*;
 
 use crate::{
-    common::LightSource,
+    common::{LightSource, StateChart, StateChartPlugin, StateChartSets},
     product::ProductMeta,
     unit::{CooldownTimer, EnableState, IdleState, Unit, UnitFactory},
 };
-
-use bevy_state_chart::{StateChart, StateChartPlugin, StateChartSets};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BonfireStateEvent {
@@ -93,12 +91,12 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(StateChartPlugin::<BonfireStateEvent>::default());
 
     app.add_systems(
-        FixedUpdate,
+        PreUpdate,
         idle_2_enable_on_enable_event.in_set(StateChartSets::StateTransition),
     );
 
     app.add_systems(
-        FixedUpdate,
+        PreUpdate,
         (on_enable_enter, on_cooldown_timer_finished).in_set(StateChartSets::Action),
     );
 }

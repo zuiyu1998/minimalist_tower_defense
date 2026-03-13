@@ -27,7 +27,6 @@ pub mod skill;
 
 use avian2d::prelude::*;
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use bevy_state_chart::StateChartConfigPlugin;
 
 use crate::camera::PanCam;
 
@@ -67,7 +66,6 @@ impl Plugin for AppPlugin {
             PhysicsPlugins::default().with_length_unit(100.0),
             asset_tracking::plugin,
             navigator::plugin,
-            StateChartConfigPlugin,
             common::plugin
         ))
         .add_plugins((

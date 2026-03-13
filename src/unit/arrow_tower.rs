@@ -1,9 +1,11 @@
 use bevy::prelude::*;
-use bevy_state_chart::{StateChart, StateChartPlugin, StateChartSets};
 
 use crate::{
     battle::{self, BulletContext},
-    common::{EnemyTargets, GameLayer, spawn_attack_distance},
+    common::{
+        EnemyTargets, GameLayer, StateChart, StateChartPlugin, StateChartSets,
+        spawn_attack_distance,
+    },
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
     unit::{CooldownTimer, EnableState, IdleState, Unit, UnitData, UnitFactory},
@@ -12,10 +14,12 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ArrowTowerStateEvent {
     Enable,
+    Active,
 }
 
 #[derive(Debug, Component)]
-pub struct CooldownTimerFinished;
+#[component(storage = "SparseSet")]
+pub struct ActiveState;
 
 fn idle_2_enable_on_enable_event(
     mut commands: Commands,
@@ -26,6 +30,40 @@ fn idle_2_enable_on_enable_event(
             commands
                 .entity(entity)
                 .remove::<IdleState>()
+                .insert(EnableState);
+        }
+    }
+}
+
+fn enable_2_active_on_enable_event(
+    mut commands: Commands,
+    idle_q: Query<
+        (Entity, &StateChart<ArrowTowerStateEvent>),
+        (With<EnableState>, With<ArrowTower>),
+    >,
+) {
+    for (entity, chart) in idle_q.iter() {
+        if chart.events().contains(&ArrowTowerStateEvent::Active) {
+            commands
+                .entity(entity)
+                .remove::<EnableState>()
+                .insert(ActiveState);
+        }
+    }
+}
+
+fn active_2_enable_on_enable_event(
+    mut commands: Commands,
+    idle_q: Query<
+        (Entity, &StateChart<ArrowTowerStateEvent>),
+        (With<ActiveState>, With<ArrowTower>),
+    >,
+) {
+    for (entity, chart) in idle_q.iter() {
+        if chart.events().contains(&ArrowTowerStateEvent::Enable) {
+            commands
+                .entity(entity)
+                .remove::<ActiveState>()
                 .insert(EnableState);
         }
     }
@@ -67,31 +105,31 @@ fn on_enable_enter(
 }
 
 //更新
-fn process(
+fn on_actvie_update(
     mut commands: Commands,
-    mut cooldown_timer_q: Query<
+    mut arrow_tower_q: Query<
         (
             &mut Unit,
             &Skill,
             Entity,
             &EnemyTargets,
             &GlobalTransform,
-            &mut CooldownTimer,
+            &mut StateChart<ArrowTowerStateEvent>,
         ),
-        (
-            With<EnableState>,
-            With<ArrowTower>,
-            With<CooldownTimerFinished>,
-        ),
+        (With<ActiveState>, With<ArrowTower>),
     >,
     enemy_q: Query<&GlobalTransform, With<Enemy>>,
 ) {
-    for (mut _unit, skill, entity, enemy_targets, unit_position, mut cooldown_timer) in
-        cooldown_timer_q.iter_mut()
+    for (mut _unit, skill, entity, enemy_targets, unit_position, mut start_chart) in
+        arrow_tower_q.iter_mut()
     {
         if enemy_targets.0.is_empty() {
+            tracing::info!("enemy_targets is null.");
             return;
         }
+
+        start_chart.send_event(ArrowTowerStateEvent::Enable);
+        commands.entity(entity).remove::<CooldownTimer>();
 
         let target = *enemy_targets.0.first().unwrap();
         let Ok(target_position) = enemy_q.get(target) else {
@@ -114,27 +152,25 @@ fn process(
 
         tracing::debug!("Skill start.");
         battle::execute_skill(&mut commands, skill, entity, vec![target], None, data);
-
-        cooldown_timer.0.reset();
-        commands.entity(entity).remove::<CooldownTimerFinished>();
     }
 }
 
 //更新
-fn on_cooldown_timer_finished(
+fn on_enable_update(
     mut commands: Commands,
     mut cooldown_timer_q: Query<
-        (Entity, &CooldownTimer),
         (
-            With<EnableState>,
-            With<ArrowTower>,
-            Without<CooldownTimerFinished>,
+            Entity,
+            &CooldownTimer,
+            &mut StateChart<ArrowTowerStateEvent>,
         ),
+        (With<EnableState>, With<ArrowTower>),
     >,
 ) {
-    for (entity, cooldown_timer) in cooldown_timer_q.iter_mut() {
+    for (entity, cooldown_timer, mut start_chart) in cooldown_timer_q.iter_mut() {
         if cooldown_timer.0.just_finished() {
-            commands.entity(entity).insert(CooldownTimerFinished);
+            start_chart.send_event(ArrowTowerStateEvent::Active);
+            commands.entity(entity).remove::<CooldownTimer>();
         }
     }
 }
@@ -143,16 +179,17 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(StateChartPlugin::<ArrowTowerStateEvent>::default());
 
     app.add_systems(
-        FixedUpdate,
-        idle_2_enable_on_enable_event.in_set(StateChartSets::StateTransition),
+        PreUpdate,
+        (
+            idle_2_enable_on_enable_event,
+            enable_2_active_on_enable_event,
+            active_2_enable_on_enable_event,
+        )
+            .in_set(StateChartSets::StateTransition),
     );
 
     app.add_systems(
-        FixedUpdate,
-        (
-            (on_cooldown_timer_finished, process).chain(),
-            on_enable_enter,
-        )
-            .in_set(StateChartSets::Action),
+        PreUpdate,
+        (on_enable_update, on_actvie_update, on_enable_enter).in_set(StateChartSets::Action),
     );
 }

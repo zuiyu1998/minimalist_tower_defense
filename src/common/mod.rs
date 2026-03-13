@@ -1,11 +1,13 @@
 mod attack_distance;
 mod hit_hurt;
 mod stas;
+mod state_chart;
 mod sunlight;
 
 pub use attack_distance::*;
 pub use hit_hurt::*;
 pub use stas::*;
+pub use state_chart::*;
 pub use sunlight::*;
 
 use avian2d::prelude::*;
@@ -71,5 +73,5 @@ impl GameLayer {
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(attack_distance::plugin);
+    app.add_plugins((attack_distance::plugin, StateChartConfigPlugin));
 }
