@@ -71,7 +71,7 @@ pub fn spawn_bullet(
         RigidBody::Kinematic,
         collider.clone(),
         GameLayer::default_layers(),
-        LinearVelocity(direction * 100.0 * 1.0),
+        LinearVelocity(direction * 400.0 * 1.0),
         Transform {
             translation: Vec3::new(bullet_position.x, bullet_position.y, 0.0),
             ..default()

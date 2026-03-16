@@ -124,7 +124,6 @@ fn on_actvie_update(
         arrow_tower_q.iter_mut()
     {
         if enemy_targets.0.is_empty() {
-            tracing::info!("enemy_targets is null.");
             return;
         }
 
