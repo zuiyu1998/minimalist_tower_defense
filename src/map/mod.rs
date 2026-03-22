@@ -18,31 +18,23 @@ use crate::{
     },
     map::lair::spawn_lair,
     screens::Screen,
-    unit::{UnitData, UnitFactoryContainer},
+    unit::{UnitData, UnitSystemParams},
 };
 
 #[derive(Debug, Clone, Default)]
 pub struct MapItemData {
     name: String,
     unit_item_name: String,
-    unit_image: String,
+
     x: i32,
     y: i32,
 }
 
 impl MapItemData {
-    pub fn get_unit_data(&self) -> UnitData {
-        UnitData {
-            item_name: self.unit_item_name.clone(),
-            image: self.unit_image.clone(),
-        }
-    }
-
     pub fn from_unit_data(unit_data: &UnitData) -> Self {
         Self {
             name: "unit".to_string(),
             unit_item_name: unit_data.item_name.to_string(),
-            unit_image: unit_data.image.to_string(),
             ..default()
         }
     }
@@ -93,7 +85,6 @@ impl Default for MapData {
         items.push(MapItemData {
             name: "unit".to_string(),
             unit_item_name: "bonfire".to_string(),
-            unit_image: "TemporaryArrowTower".to_string(),
             x: 0,
             y: 0,
             ..default()
@@ -116,7 +107,7 @@ fn on_spawn_unit(
     map: Single<(Entity, &Map)>,
     map_positon: Single<&MapPosition>,
     mut map_state: ResMut<MapState>,
-    unit_factory_container: Res<UnitFactoryContainer>,
+    unit_system_params: UnitSystemParams,
 ) {
     if map_state.enable
         && map_state.selelcted_map_item_data.is_some()
@@ -137,7 +128,7 @@ fn on_spawn_unit(
             &asset_server,
             &map_item_data,
             position,
-            &unit_factory_container,
+            &unit_system_params,
         );
 
         map_state.enable = false;
@@ -227,7 +218,7 @@ pub fn spawn_map(
     command: &mut Commands,
     asset_server: &AssetServer,
     map_data: &MapData,
-    unit_factory_container: &UnitFactoryContainer,
+    unit_system_params: &UnitSystemParams,
 ) {
     let map = Map::default();
 
@@ -267,7 +258,7 @@ pub fn spawn_map(
             asset_server,
             &item,
             position,
-            unit_factory_container,
+            &unit_system_params,
         );
     }
 

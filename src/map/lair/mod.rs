@@ -42,7 +42,7 @@ impl SquareLarir {
 
     pub fn empty() -> Self {
         SquareLarir {
-            timer: Timer::from_seconds(5.0, TimerMode::Repeating),
+            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
             enemy_spawner_container: EnemySpawnerContainer::empty(),
             enabled: true,
         }

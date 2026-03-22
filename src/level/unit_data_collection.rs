@@ -203,6 +203,7 @@ impl Default for UnitDataCollection {
         items.push(UnitData {
             item_name: "arrow_tower".to_string(),
             image: "TemporaryArrowTower".to_string(),
+            cooldown_timer: 1,
         });
 
         UnitDataCollection { items }

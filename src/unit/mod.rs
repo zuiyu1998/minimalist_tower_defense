@@ -7,11 +7,60 @@ pub use bonfire::*;
 use std::{fmt::Debug, time::Duration};
 
 use crate::{
+    asset_tracking::LoadResource,
     common::{EnemyTargets, GameLayer, Stas, spawn_hurt},
     skill::Skill,
 };
 use avian2d::prelude::*;
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::{
+    asset::{AssetLoader, AsyncReadExt, LoadContext, io::Reader},
+    ecs::system::SystemParam,
+    platform::collections::HashMap,
+    prelude::*,
+};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+#[derive(SystemParam)]
+pub struct UnitSystemParams<'w> {
+    pub unit_factory_container: Res<'w, UnitFactoryContainer>,
+    unit_data_assets: Res<'w, UnitDataAssets>,
+    unit_data_set: Res<'w, Assets<UnitData>>,
+}
+
+impl UnitSystemParams<'_> {
+    pub fn get_unit_data(&self, item_name: &str) -> Option<UnitData> {
+        self.unit_data_assets
+            .assets
+            .get(item_name)
+            .and_then(|handle| self.unit_data_set.get(handle).cloned())
+    }
+}
+
+#[derive(Resource, Asset, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct UnitDataAssets {
+    assets: HashMap<String, Handle<UnitData>>,
+}
+
+impl FromWorld for UnitDataAssets {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.resource::<AssetServer>();
+        let mut assets = HashMap::new();
+
+        assets.insert(
+            "bonfire".into(),
+            asset_server.load("unit/bonfire.unit_data.yaml"),
+        );
+
+        assets.insert(
+            "arrow_tower".into(),
+            asset_server.load("unit/arrow_tower.unit_data.yaml"),
+        );
+
+        Self { assets }
+    }
+}
 
 #[derive(Debug, Component)]
 #[component(storage = "SparseSet")]
@@ -66,10 +115,46 @@ impl UnitFactoryContainer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, TypePath)]
+pub struct UnitDataLoader;
+
+#[derive(Debug, Error)]
+pub enum UnitDataLoaderError {
+    #[error("Could not load asset: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not parse Yaml: {0}")]
+    Yaml(#[from] yaml_serde::Error),
+}
+
+impl AssetLoader for UnitDataLoader {
+    type Asset = UnitData;
+
+    type Settings = ();
+
+    type Error = UnitDataLoaderError;
+
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &(),
+        _load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut buffer = String::new();
+        reader.read_to_string(&mut buffer).await?;
+        let asset: UnitData = yaml_serde::from_str(&buffer)?;
+        Ok(asset)
+    }
+    fn extensions(&self) -> &[&str] {
+        &[".unit_data.yaml"]
+    }
+}
+
+#[derive(Debug, Clone, Asset, Reflect, Deserialize, Serialize)]
 pub struct UnitData {
     pub item_name: String,
     pub image: String,
+    //冷却倒计时，单位为秒
+    pub cooldown_timer: u64,
 }
 
 impl UnitData {
@@ -97,8 +182,10 @@ pub struct Unit {
 }
 
 impl Unit {
-    pub fn from_data(_data: &UnitData) -> Self {
-        Unit { cooldown_timer: 1 }
+    pub fn from_data(data: &UnitData) -> Self {
+        Unit {
+            cooldown_timer: data.cooldown_timer,
+        }
     }
 
     pub fn spawn_unit(
@@ -148,7 +235,11 @@ impl Unit {
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<UnitFactoryContainer>();
+    app.init_asset_loader::<UnitDataLoader>();
+    app.init_asset::<UnitData>();
     app.add_systems(Update, (on_cooldown_timer_update,));
+
+    app.load_resource::<UnitDataAssets>();
 
     arrow_tower::plugin(app);
     bonfire::plugin(app);

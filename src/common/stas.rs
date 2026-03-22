@@ -20,8 +20,8 @@ impl Stas {
 impl Default for Stas {
     fn default() -> Self {
         Self {
-            health: 10,
-            health_max: 10,
+            health: 20,
+            health_max: 20,
         }
     }
 }

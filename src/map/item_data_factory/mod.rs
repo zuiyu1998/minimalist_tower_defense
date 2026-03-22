@@ -4,7 +4,7 @@ use bevy::{platform::collections::HashMap, prelude::*};
 
 use crate::{
     map::spawn_hill_map_item,
-    unit::{UnitFactoryContainer, spawn_unit},
+    unit::{UnitSystemParams, spawn_unit},
 };
 
 use super::MapItemData;
@@ -36,7 +36,7 @@ impl MapItemFactoryContainer {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
-        unit_factory_container: &UnitFactoryContainer,
+        unit_system_params: &UnitSystemParams,
     ) {
         if let Some(factory) = self.get_map_item_factory(&item_data.name) {
             factory.spawn_map_item(
@@ -44,7 +44,7 @@ impl MapItemFactoryContainer {
                 asset_server,
                 &item_data,
                 position,
-                unit_factory_container,
+                unit_system_params,
             );
         }
     }
@@ -69,7 +69,7 @@ pub trait MapItemFactory: 'static + Send + Sync + Debug {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
-        unit_factory_container: &UnitFactoryContainer,
+        unit_system_params: &UnitSystemParams,
     );
 }
 
@@ -87,7 +87,7 @@ impl MapItemFactory for HillMapItemFactory {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
-        _unit_factory_container: &UnitFactoryContainer,
+        _unit_system_params: &UnitSystemParams,
     ) {
         spawn_hill_map_item(commands, asset_server, item_data, position);
     }
@@ -107,15 +107,18 @@ impl MapItemFactory for UnitMapItemFactory {
         asset_server: &AssetServer,
         item_data: &MapItemData,
         position: Vec3,
-        unit_factory_container: &UnitFactoryContainer,
+        unit_system_params: &UnitSystemParams,
     ) {
-        let unit_data = item_data.get_unit_data();
-        spawn_unit(
-            commands,
-            asset_server,
-            position,
-            &unit_data,
-            unit_factory_container,
-        );
+        if let Some(unit_data) = unit_system_params.get_unit_data(&item_data.unit_item_name) {
+            spawn_unit(
+                commands,
+                asset_server,
+                position,
+                &unit_data,
+                &unit_system_params.unit_factory_container,
+            );
+        } else {
+            tracing::error!("{} unit data not found.", item_data.unit_item_name);
+        }
     }
 }
