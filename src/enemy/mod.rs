@@ -7,6 +7,7 @@ use crate::{
 use avian2d::prelude::*;
 use bevy::{
     ecs::system::SystemParam,
+    math::VectorSpace,
     platform::collections::{HashMap, HashSet},
     prelude::*,
 };
@@ -182,28 +183,46 @@ pub struct Enemy;
 #[derive(Debug, Component)]
 pub struct Square;
 
-//添加导航
-fn find_navigator_path(
-    mut query: Query<(Ref<GlobalTransform>, &mut NavigatorPath)>,
-    navmeshes: Res<Assets<NavMesh>>,
-    navmesh: Single<&ManagedNavMesh>,
+#[derive(Debug, Component)]
+pub struct LightSourcePosition(Vec3);
+
+//寻找光源
+fn find_light_source(
+    mut commands: Commands,
+    mut enemy_query: Query<(Ref<GlobalTransform>, Entity), With<Enemy>>,
     light_source_q: Query<Ref<GlobalTransform>, With<LightSource>>,
 ) {
-    if light_source_q.is_empty() {
-        return;
-    }
+    let light_sources: Vec<GlobalTransform> =
+        light_source_q.iter().map(|item| item.clone()).collect();
 
+    for (_transform, entity) in enemy_query.iter_mut() {
+        if light_source_q.is_empty() {
+            commands.entity(entity).remove::<LightSourcePosition>();
+        } else {
+            //根据策略设定光源位置 todo
+            commands.entity(entity).insert(LightSourcePosition(
+                light_sources.first().unwrap().translation(),
+            ));
+        }
+    }
+}
+
+//添加导航
+fn find_navigator_path(
+    mut query: Query<(
+        Ref<GlobalTransform>,
+        &mut NavigatorPath,
+        &LightSourcePosition,
+    )>,
+    navmeshes: Res<Assets<NavMesh>>,
+    navmesh: Single<&ManagedNavMesh>,
+) {
     let Some(navmesh) = navmeshes.get(*navmesh) else {
         return;
     };
 
-    let light_sources: Vec<GlobalTransform> =
-        light_source_q.iter().map(|item| item.clone()).collect();
-    let light_source = light_sources.first().unwrap();
-
-    for (transform, mut navigator_path) in query.iter_mut() {
-        let Some(path) =
-            navmesh.transformed_path(transform.translation(), light_source.translation())
+    for (transform, mut navigator_path, light_source_position) in query.iter_mut() {
+        let Some(path) = navmesh.transformed_path(transform.translation(), light_source_position.0)
         else {
             continue;
         };
@@ -225,21 +244,31 @@ pub fn move_enemy(
         Entity,
         &mut LinearVelocity,
         &Enemy,
+        Option<&LightSourcePosition>,
     )>,
 ) {
-    for (transform, path, _entity, mut linvel, _enemy) in navigator.iter_mut() {
-        let move_direction = path.current - transform.translation();
-        linvel.0 = move_direction.truncate().normalize() * 50.0;
-
-        if transform.translation().distance(path.current) < 50.0 && path.next.is_empty() {
+    for (transform, path, _entity, mut linvel, _enemy, light_source_position) in
+        navigator.iter_mut()
+    {
+        if light_source_position.is_none() {
             linvel.0 = Vec2::ZERO;
-            continue;
+        } else {
+            let move_direction = path.current - transform.translation();
+            linvel.0 = move_direction.truncate().normalize() * 50.0;
+
+            if transform.translation().distance(path.current) < 50.0 && path.next.is_empty() {
+                linvel.0 = Vec2::ZERO;
+                continue;
+            }
         }
     }
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(PreUpdate, (find_navigator_path, move_enemy));
+    app.add_systems(
+        PreUpdate,
+        (find_light_source, find_navigator_path, move_enemy).chain(),
+    );
 
     app.add_systems(Update, on_enemy_attack);
 }
