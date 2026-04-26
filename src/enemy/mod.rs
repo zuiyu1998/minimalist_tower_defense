@@ -7,7 +7,6 @@ use crate::{
 use avian2d::prelude::*;
 use bevy::{
     ecs::system::SystemParam,
-    math::VectorSpace,
     platform::collections::{HashMap, HashSet},
     prelude::*,
 };

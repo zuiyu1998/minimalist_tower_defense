@@ -3,12 +3,14 @@ mod hit_hurt;
 mod stas;
 mod state_chart;
 mod sunlight;
+mod progress_bar;
 
 pub use attack_distance::*;
 pub use hit_hurt::*;
 pub use stas::*;
 pub use state_chart::*;
 pub use sunlight::*;
+pub use progress_bar::*;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
