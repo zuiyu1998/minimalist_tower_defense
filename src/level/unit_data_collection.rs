@@ -32,9 +32,13 @@ fn update_used_cooldown_timer_text_system(
 }
 
 fn update_progress_bar_system(
-    mut used_cooldown_timer_q: Query<(&UsedCooldownTimer, &mut ProgressBar)>,
+    mut used_cooldown_timer_q: Query<(&UsedCooldownTimer, &mut ProgressBar, &UnitDataButton)>,
 ) {
-    for (cooldown_timer, mut progress_bar) in used_cooldown_timer_q.iter_mut() {
+    for (cooldown_timer, mut progress_bar, button) in used_cooldown_timer_q.iter_mut() {
+        if !button.disabled {
+            continue;
+        }
+
         let remaining = cooldown_timer.0.remaining().as_secs_f32();
         let max = cooldown_timer.0.duration().as_secs_f32();
 
@@ -121,7 +125,7 @@ fn unit_data_button(
     unit_data: &UnitData,
 ) {
     let image: ImageNode = unit_data.get_unit_image(asset_server).into();
-    let handle = asset_server.load("images/splash.png");
+    let handle = asset_server.load("images/enemy/square.png");
 
     commands
         .spawn((
