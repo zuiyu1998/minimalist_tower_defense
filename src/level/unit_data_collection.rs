@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::{ecs::relationship::RelatedSpawnerCommands, prelude::*};
 
 use crate::{
+    common::ProgressBar,
     map::{MapItemData, MapState},
     screens::Screen,
     unit::UnitData,
@@ -27,6 +28,17 @@ fn update_used_cooldown_timer_text_system(
         } else {
             text.0 = format!("0");
         }
+    }
+}
+
+fn update_progress_bar_system(
+    mut used_cooldown_timer_q: Query<(&UsedCooldownTimer, &mut ProgressBar)>,
+) {
+    for (cooldown_timer, mut progress_bar) in used_cooldown_timer_q.iter_mut() {
+        let remaining = cooldown_timer.0.remaining().as_secs_f32();
+        let max = cooldown_timer.0.duration().as_secs_f32();
+
+        progress_bar.value = remaining / max * 100.0;
     }
 }
 
@@ -109,6 +121,7 @@ fn unit_data_button(
     unit_data: &UnitData,
 ) {
     let image: ImageNode = unit_data.get_unit_image(asset_server).into();
+    let handle = asset_server.load("images/splash.png");
 
     commands
         .spawn((
@@ -123,13 +136,16 @@ fn unit_data_button(
                 disabled: false,
             },
             UsedCooldownTimer::new(10),
+            ProgressBar {
+                value: 0.0,
+                texture: handle,
+            },
         ))
         .with_children(|parent| {
             let entity = parent.target_entity();
 
             parent.spawn((
                 UsedCooldownTimerNode(entity),
-                Visibility::Hidden,
                 Node {
                     width: px(64),
                     height: px(64),
@@ -220,6 +236,7 @@ pub(super) fn plugin(app: &mut App) {
             update_used_cooldown_timer_system,
             update_used_cooldown_timer_text_system,
             update_used_cooldown_timer_node_system,
+            update_progress_bar_system,
         ),
     );
 }
