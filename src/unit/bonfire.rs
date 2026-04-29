@@ -44,11 +44,11 @@ fn on_cooldown_timer_finished(
     mut writer: MessageWriter<ProductMeta>,
 ) {
     for (mut cooldown_timer, bonfire, mut _unit) in cooldown_timer_q.iter_mut() {
-        if cooldown_timer.0.just_finished() {
+        if cooldown_timer.timer.just_finished() {
             tracing::info!("Products is generated.");
             writer.write_batch(bonfire.products.iter().cloned());
 
-            cooldown_timer.0.reset();
+            cooldown_timer.timer.reset();
         }
     }
 }

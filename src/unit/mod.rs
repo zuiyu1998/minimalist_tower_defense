@@ -73,7 +73,7 @@ pub struct EnableState;
 //更新技能冷却
 fn on_cooldown_timer_update(mut cooldown_timer_q: Query<(&mut CooldownTimer,)>, time: Res<Time>) {
     for (mut cooldown_timer,) in cooldown_timer_q.iter_mut() {
-        cooldown_timer.0.tick(time.delta());
+        cooldown_timer.timer.tick(time.delta());
     }
 }
 
@@ -168,11 +168,18 @@ pub trait UnitFactory: 'static + Send + Sync + Debug {
 }
 
 #[derive(Debug, Component)]
-pub struct CooldownTimer(Timer);
+pub struct FirstCreate;
+
+#[derive(Debug, Component)]
+pub struct CooldownTimer {
+    pub timer: Timer,
+}
 
 impl CooldownTimer {
     pub fn new(secs: u64) -> Self {
-        CooldownTimer(Timer::new(Duration::from_secs(secs), TimerMode::Repeating))
+        CooldownTimer {
+            timer: Timer::new(Duration::from_secs(secs), TimerMode::Repeating),
+        }
     }
 }
 
@@ -221,6 +228,7 @@ impl Unit {
             CooldownTimer::new(self.cooldown_timer),
             Skill {},
             Stas::default(),
+            FirstCreate,
         ));
 
         spawn_hurt(

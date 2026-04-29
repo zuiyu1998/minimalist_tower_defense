@@ -8,7 +8,7 @@ use crate::{
     },
     enemy::Enemy,
     skill::{Skill, SkillRunContextData, SkillRunContextDataBuilder},
-    unit::{CooldownTimer, EnableState, IdleState, Unit, UnitData, UnitFactory},
+    unit::{CooldownTimer, EnableState, FirstCreate, IdleState, Unit, UnitData, UnitFactory},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -162,12 +162,17 @@ fn on_enable_update(
             Entity,
             &CooldownTimer,
             &mut StateChart<ArrowTowerStateEvent>,
+            Option<&FirstCreate>,
         ),
         (With<EnableState>, With<ArrowTower>),
     >,
 ) {
-    for (entity, cooldown_timer, mut start_chart) in cooldown_timer_q.iter_mut() {
-        if cooldown_timer.0.just_finished() {
+    for (entity, cooldown_timer, mut start_chart, frist) in cooldown_timer_q.iter_mut() {
+        if frist.is_some() {
+            start_chart.send_event(ArrowTowerStateEvent::Active);
+            commands.entity(entity).remove::<CooldownTimer>();
+            commands.entity(entity).remove::<FirstCreate>();
+        } else if cooldown_timer.timer.just_finished() {
             start_chart.send_event(ArrowTowerStateEvent::Active);
             commands.entity(entity).remove::<CooldownTimer>();
         }
